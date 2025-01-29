@@ -3,12 +3,17 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:local="clr-namespace:VdlParser"
         mc:Ignorable="d"
         Title="VDL file parser"
         Height="450" Width="1200"
-        Icon="/Assets/images/icon.png">
+        Icon="/Assets/images/icon.png"
+        Closed="Window_Closed">
+
     <Window.Resources>
+        <local:ObjectToBoolConverter x:Key="obj2bool"/>
+        
         <Style TargetType="Button">
             <Setter Property="Padding" Value="8"/>
             <Setter Property="MinWidth" Value="120"/>
@@ -59,8 +64,25 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+
+        <ObjectDataProvider x:Key="FingerProvider"
+                            MethodName="GetValues"
+                            ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="local:Finger"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+
+        <ObjectDataProvider x:Key="GazeDimensionProvider"
+                            MethodName="GetValues"
+                            ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="local:GazeRotation"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+
     </Window.Resources>
-    
+
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" MinWidth="150"/>
@@ -74,10 +96,10 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <ListBox Grid.Row="0"
+            <ListBox x:Name="lsbVdls" Grid.Row="0"
                      DataContext="{Binding Controller}"
                      ItemsSource="{Binding Vdls}"
-                     ItemContainerStyle="{StaticResource VdlListContainer}" SelectionChanged="ListBox_SelectionChanged"/>
+                     ItemContainerStyle="{StaticResource VdlListContainer}" SelectionChanged="VdlsListBox_SelectionChanged"/>
 
             <Button Grid.Row="1"
                 Content="Load..."
@@ -102,10 +124,12 @@
                     <RowDefinition/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                
-                <StackPanel Grid.Row="0">
+
+                <StackPanel Grid.Row="0"
+                            Margin="4">
                     <Grid DataContext="{Binding Path=Controller.HandPeakDetector, Mode=OneTime}">
                         <Grid.RowDefinitions>
+                            <RowDefinition/>
                             <RowDefinition/>
                             <RowDefinition/>
                             <RowDefinition/>
@@ -123,25 +147,32 @@
                         <Label Grid.Row="1" Grid.Column="0"
                                Content="Buffer size"/>
                         <TextBox Grid.Row="1" Grid.Column="1"
-                                 Text="{Binding BufferSize, Mode=OneWay}"/>
+                                 Text="{Binding BufferSize, Mode=TwoWay}"/>
                         <Label Grid.Row="2" Grid.Column="0"
                                Content="Change threshold"/>
                         <TextBox Grid.Row="2" Grid.Column="1"
-                                 Text="{Binding PeakThreshold, Mode=OneWay}"/>
+                                 Text="{Binding PeakThreshold, Mode=TwoWay}"/>
                         <Label Grid.Row="3" Grid.Column="0"
                                Content="Ignorance threhold"/>
                         <TextBox Grid.Row="3" Grid.Column="1"
-                                 Text="{Binding IgnoranceThrehold, Mode=OneWay}"/>
+                                 Text="{Binding IgnoranceThrehold, Mode=TwoWay}"/>
                         <Label Grid.Row="4" Grid.Column="0"
                                Content="Max peak duration"/>
                         <TextBox Grid.Row="4" Grid.Column="1"
-                                 Text="{Binding MaxPeakDuration, Mode=OneWay}"/>
+                                 Text="{Binding MaxPeakDuration, Mode=TwoWay}"/>
+                        <Label Grid.Row="5" Grid.Column="0"
+                               Content="Data source"/>
                     </Grid>
+                    <ComboBox DataContext="{Binding Controller}"
+                              ItemsSource="{Binding Source={StaticResource FingerProvider}}"
+                              SelectedItem="{Binding Finger, Mode=TwoWay}"
+                              Margin="6,0,0,0"/>
 
                     <Separator Margin="2,12"/>
-            
+
                     <Grid DataContext="{Binding Path=Controller.GazePeakDetector, Mode=OneTime}">
                         <Grid.RowDefinitions>
+                            <RowDefinition/>
                             <RowDefinition/>
                             <RowDefinition/>
                             <RowDefinition/>
@@ -158,20 +189,29 @@
                         <Label Grid.Row="1" Grid.Column="0"
                                Content="Buffer size"/>
                         <TextBox Grid.Row="1" Grid.Column="1"
-                                 Text="{Binding BufferSize, Mode=OneWay}"/>
+                                 Text="{Binding BufferSize, Mode=TwoWay}"/>
                         <Label Grid.Row="2" Grid.Column="0"
                                Content="Change threshold"/>
                         <TextBox Grid.Row="2" Grid.Column="1"
-                                 Text="{Binding PeakThreshold, Mode=OneWay}"/>
+                                 Text="{Binding PeakThreshold, Mode=TwoWay}"/>
                         <Label Grid.Row="3" Grid.Column="0"
                                Content="Max peak duration"/>
                         <TextBox Grid.Row="3" Grid.Column="1"
-                                 Text="{Binding MaxPeakDuration, Mode=OneWay}"/>
+                                 Text="{Binding MaxPeakDuration, Mode=TwoWay}"/>
+                        <Label Grid.Row="4" Grid.Column="0"
+                               Content="Data source"/>
                     </Grid>
+                    <ComboBox DataContext="{Binding Controller}"
+                              ItemsSource="{Binding Source={StaticResource GazeDimensionProvider}}"
+                              SelectedItem="{Binding GazeRotation, Mode=TwoWay}"
+                              Margin="6,0,0,0"/>
                 </StackPanel>
 
                 <Button Grid.Row="1"
-                        Content="Apply" Click="ApplyPeakDetector_Click"/>
+                        DataContext="{Binding Controller}"
+                        IsEnabled="{Binding SelectedItem, ElementName=lsbVdls, Converter={StaticResource obj2bool}}"
+                        Content="Apply"
+                        Click="ApplyPeakDetector_Click"/>
             </Grid>
         </Border>
     </Grid>

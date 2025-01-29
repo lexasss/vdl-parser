@@ -19,7 +19,12 @@ public partial class MainWindow : Window
 
     // UI events
 
-    private void ListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void Window_Closed(object sender, EventArgs e)
+    {
+        Controller.Dispose();
+    }
+
+    private void VdlsListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (e.AddedItems.Count > 0)
         {
@@ -62,6 +67,6 @@ public partial class MainWindow : Window
 
     private void ApplyPeakDetector_Click(object sender, RoutedEventArgs e)
     {
-
+        Controller.DetectPeaks((Vdl)lsbVdls.SelectedItem, plot);
     }
 }

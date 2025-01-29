@@ -34,5 +34,29 @@ namespace VdlParser.Properties {
                 this["LogFolder"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string HandPeakDetector {
+            get {
+                return ((string)(this["HandPeakDetector"]));
+            }
+            set {
+                this["HandPeakDetector"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string GazePeakDetector {
+            get {
+                return ((string)(this["GazePeakDetector"]));
+            }
+            set {
+                this["GazePeakDetector"] = value;
+            }
+        }
     }
 }

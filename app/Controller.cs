@@ -2,11 +2,25 @@
 
 namespace VdlParser;
 
-public class Controller
+public enum Finger
+{
+    Index,
+    Middle
+}
+
+public enum GazeRotation
+{
+    Yaw,
+    Pitch
+}
+
+public class Controller : IDisposable
 {
     public ObservableCollection<Vdl> Vdls { get; }
-    public PeakDetector HandPeakDetector { get; } = new PeakDetector() { PeakThreshold = 1.5, BufferSize = 12, IgnoranceThrehold = 20 };
-    public PeakDetector GazePeakDetector { get; } = new PeakDetector() { PeakThreshold = 10, BufferSize = 30, IgnoranceThrehold = -1000 };
+    public PeakDetector HandPeakDetector { get; } = PeakDetector.Load(DataSourceType.Finger);
+    public PeakDetector GazePeakDetector { get; } = PeakDetector.Load(DataSourceType.Eye);
+    public Finger Finger { get; set; } = Finger.Index;
+    public GazeRotation GazeRotation { get; set; } = GazeRotation.Yaw;
 
     public Controller()
     {
@@ -22,39 +36,66 @@ public class Controller
     {
         plot.Reset();
 
-        var middleFingerTimeseries = vdl.Records.Select(record => new Sample(record.TimestampSystem, record.HandMiddle.Y)).ToArray();
-        var middleFingerPeaks = HandPeakDetector.Find(middleFingerTimeseries);
-
-        var indexFingerTimeseries = vdl.Records.Select(record => new Sample(record.TimestampSystem, record.HandIndex.Y)).ToArray();
-        var indexFingerPeaks = HandPeakDetector.Find(indexFingerTimeseries);
-
-        System.Diagnostics.Debug.WriteLine("Index finger");
-        foreach (var peak in indexFingerPeaks)
+        var fingerTimeseries = Finger switch
         {
-            System.Diagnostics.Debug.WriteLine($"{peak}");
+            Finger.Index => vdl.Records.Select(record => new Sample(record.TimestampSystem, record.HandIndex.Y)).ToArray(),
+            Finger.Middle => vdl.Records.Select(record => new Sample(record.TimestampSystem, record.HandMiddle.Y)).ToArray(),
+            _ => throw new NotImplementedException($"{Finger} is not yet supported")
+        };
+
+        var gazeTimeseries = GazeRotation switch
+        {
+            GazeRotation.Yaw => vdl.Records.Select(record => new Sample(record.TimestampSystem, record.Eye.Yaw)).ToArray(),
+            GazeRotation.Pitch => vdl.Records.Select(record => new Sample(record.TimestampSystem, record.Eye.Pitch)).ToArray(),
+            _ => throw new NotImplementedException($"{GazeRotation} is not yet supported")
+        };
+
+        plot.AddCurve(fingerTimeseries, COLOR_FINGER);
+        plot.AddCurve(gazeTimeseries, COLOR_GAZE);
+    }
+
+    public void DetectPeaks(Vdl vdl, Graph plot)
+    {
+        Display(vdl, plot);
+
+        var fingerTimeseries = Finger switch
+        {
+            Finger.Index => vdl.Records.Select(record => new Sample(record.TimestampSystem, record.HandIndex.Y)).ToArray(),
+            Finger.Middle => vdl.Records.Select(record => new Sample(record.TimestampSystem, record.HandMiddle.Y)).ToArray(),
+            _ => throw new NotImplementedException($"{Finger} is not yet supported")
+        };
+
+        var fingerPeaks = HandPeakDetector.Find(fingerTimeseries);
+        foreach (var peak in fingerPeaks)
+        {
+            plot.AddVLine(peak.TimestampStart, COLOR_FINGER);
         }
 
-        System.Diagnostics.Debug.WriteLine("Middle finger");
-        foreach (var peak in middleFingerPeaks)
+        var gazeTimeseries = GazeRotation switch
         {
-            System.Diagnostics.Debug.WriteLine($"{peak}");
-        }
+            GazeRotation.Yaw => vdl.Records.Select(record => new Sample(record.TimestampSystem, record.Eye.Yaw)).ToArray(),
+            GazeRotation.Pitch => vdl.Records.Select(record => new Sample(record.TimestampSystem, record.Eye.Pitch)).ToArray(),
+            _ => throw new NotImplementedException($"{GazeRotation} is not yet supported")
+        };
 
-        var gazeYawTimeseries = vdl.Records.Select(record => new Sample(record.TimestampSystem, record.Eye.Yaw)).ToArray();
-        var gazeYawPeaks = GazePeakDetector.Find(gazeYawTimeseries);
-
-        System.Diagnostics.Debug.WriteLine("Gaze yaw");
-        foreach (var peak in gazeYawPeaks)
+        var gazePeaks = GazePeakDetector.Find(gazeTimeseries);
+        foreach (var peak in gazePeaks)
         {
-            System.Diagnostics.Debug.WriteLine($"{peak}");
+            plot.AddVLine(peak.TimestampStart, COLOR_GAZE);
         }
+    }
 
-        plot.AddCurve(middleFingerTimeseries, System.Drawing.Color.Green);
-        plot.AddCurve(indexFingerTimeseries, System.Drawing.Color.Blue);
-        plot.AddCurve(gazeYawTimeseries, System.Drawing.Color.Black);
+    public void Dispose()
+    {
+        PeakDetector.Save(DataSourceType.Finger, HandPeakDetector);
+        PeakDetector.Save(DataSourceType.Eye, GazePeakDetector);
+        GC.SuppressFinalize(this);
     }
 
     // Internal
 
-    List<Vdl> _vdls = new();
+    readonly System.Drawing.Color COLOR_FINGER = System.Drawing.Color.Blue;
+    readonly System.Drawing.Color COLOR_GAZE = System.Drawing.Color.Red;
+
+    List<Vdl> _vdls = [];
 }

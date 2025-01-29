@@ -38,6 +38,12 @@ public partial class Graph : UserControl
         chart.Render();
     }
 
+    public void AddVLine(double X, System.Drawing.Color color)
+    {
+        chart.Plot.AddVerticalLine(X, color, width: 1);
+        chart.Render();
+    }
+
     public void AddCurve(Sample[] samples, System.Drawing.Color color)
     {
         var x = samples.Select(s => (double)s.Timestamp);

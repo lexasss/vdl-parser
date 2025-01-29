@@ -1,9 +1,16 @@
 ﻿using MathNet.Numerics.Statistics;
+using System.Text.Json;
 
 namespace VdlParser;
 
 public record class Sample(long Timestamp, double Value);
 public record class Peak(int StartIndex, long TimestampStart, long TimestampEnd, double Amplitude);
+
+public enum DataSourceType
+{
+    Finger,
+    Eye
+}
 
 public class PeakDetector
 {
@@ -16,6 +23,58 @@ public class PeakDetector
     public double PeakThreshold { get; set; } = 1.5;
     public double IgnoranceThrehold { get; set; } = 20;
     public long MaxPeakDuration { get; set; } = 2500;
+
+    public static PeakDetector Load(DataSourceType dataSourceType)
+    {
+        var settings = Properties.Settings.Default;
+        string json = dataSourceType switch
+        {
+            DataSourceType.Finger => settings.HandPeakDetector,
+            DataSourceType.Eye => settings.GazePeakDetector,
+            _ => throw new NotSupportedException($"{dataSourceType} is not yet suppoted")
+        };
+
+        var defaultDetector = dataSourceType switch
+        {
+            DataSourceType.Finger => new PeakDetector() { PeakThreshold = 1.5, BufferSize = 12, IgnoranceThrehold = 20 },
+            DataSourceType.Eye => new PeakDetector() { PeakThreshold = 10, BufferSize = 30, IgnoranceThrehold = -1000 },
+            _ => throw new NotSupportedException($"{dataSourceType} is not yet suppoted")
+        };
+
+        if (string.IsNullOrEmpty(json))
+        {
+            return defaultDetector;
+        }
+
+        PeakDetector? result = null;
+        try
+        {
+            result = JsonSerializer.Deserialize<PeakDetector>(json);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(ex.Message);
+        }
+
+        return result ?? defaultDetector;
+    }
+
+    public static void Save(DataSourceType dataSourceType, PeakDetector detector)
+    {
+        var json = JsonSerializer.Serialize(detector);
+
+        var settings = Properties.Settings.Default;
+        if (dataSourceType == DataSourceType.Finger)
+        {
+            settings.HandPeakDetector = json;
+        }
+        else if (dataSourceType == DataSourceType.Eye)
+        {
+            settings.GazePeakDetector = json;
+        }
+
+        settings.Save();
+    }
 
     public Peak[] Find(Sample[] timeseries)
     {
