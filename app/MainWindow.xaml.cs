@@ -32,11 +32,13 @@ public partial class MainWindow : Window
             if (vdl != null)
             {
                 Controller.Display(vdl, plot);
+                txbSummary.Text = "";
             }
         }
         else if (sender is ListBox lsb && lsb.SelectedItem == null)
         {
             plot.Reset();
+            txbSummary.Text = "";
         }
     }
 
@@ -67,6 +69,6 @@ public partial class MainWindow : Window
 
     private void ApplyPeakDetector_Click(object sender, RoutedEventArgs e)
     {
-        Controller.DetectPeaks((Vdl)lsbVdls.SelectedItem, plot);
+        txbSummary.Text = Controller.AnalyzeAndDraw((Vdl)lsbVdls.SelectedItem, plot);
     }
 }

@@ -113,7 +113,9 @@
                 <RowDefinition/>
             </Grid.RowDefinitions>
             <local:Graph x:Name="plot"
-                         Grid.Column="1"/>
+                         Grid.Row="0"/>
+            <TextBox x:Name="txbSummary"
+                     Grid.Row="1"/>
         </Grid>
 
         <Border Grid.Column="2"
@@ -129,7 +131,6 @@
                             Margin="4">
                     <Grid DataContext="{Binding Path=Controller.HandPeakDetector, Mode=OneTime}">
                         <Grid.RowDefinitions>
-                            <RowDefinition/>
                             <RowDefinition/>
                             <RowDefinition/>
                             <RowDefinition/>
@@ -153,14 +154,10 @@
                         <TextBox Grid.Row="2" Grid.Column="1"
                                  Text="{Binding PeakThreshold, Mode=TwoWay}"/>
                         <Label Grid.Row="3" Grid.Column="0"
-                               Content="Ignorance threhold"/>
-                        <TextBox Grid.Row="3" Grid.Column="1"
-                                 Text="{Binding IgnoranceThrehold, Mode=TwoWay}"/>
-                        <Label Grid.Row="4" Grid.Column="0"
                                Content="Max peak duration"/>
-                        <TextBox Grid.Row="4" Grid.Column="1"
+                        <TextBox Grid.Row="3" Grid.Column="1"
                                  Text="{Binding MaxPeakDuration, Mode=TwoWay}"/>
-                        <Label Grid.Row="5" Grid.Column="0"
+                        <Label Grid.Row="4" Grid.Column="0"
                                Content="Data source"/>
                     </Grid>
                     <ComboBox DataContext="{Binding Controller}"

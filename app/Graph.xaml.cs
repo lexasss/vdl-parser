@@ -38,9 +38,9 @@ public partial class Graph : UserControl
         chart.Render();
     }
 
-    public void AddVLine(double X, System.Drawing.Color color)
+    public void AddVLine(double X, System.Drawing.Color color, float width = 1)
     {
-        chart.Plot.AddVerticalLine(X, color, width: 1);
+        chart.Plot.AddVerticalLine(X, color, width);
         chart.Render();
     }
 
