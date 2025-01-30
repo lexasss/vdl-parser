@@ -66,6 +66,8 @@ public class Controller : IDisposable
         var fingerPeaks = HandPeakDetector.Find(fingerTs);
         var gazePeaks = GazePeakDetector.Find(gazeTs);
 
+        var matches = MatchPeaks(fingerPeaks, gazePeaks);
+
         // Draw
         plot.Reset();
         plot.AddCurve(fingerTs, COLOR_FINGER);
@@ -73,20 +75,14 @@ public class Controller : IDisposable
 
         foreach (var peak in fingerPeaks)
         {
-            plot.AddVLine(peak.TimestampStart, COLOR_FINGER);
+            bool isMatched = matches.Any((pair) => peak == pair.Item1);
+            plot.AddVLine(peak.TimestampStart, COLOR_FINGER, isMatched ? 1 : 2);
         }
 
         foreach (var peak in gazePeaks)
         {
-            plot.AddVLine(peak.TimestampStart, COLOR_GAZE);
-        }
-
-        var matches = MatchPeaks(fingerPeaks, gazePeaks);
-
-        foreach (var match in matches)
-        {
-            plot.AddVLine(match.Item1.TimestampStart, COLOR_FINGER, 2);
-            plot.AddVLine(match.Item2.TimestampStart, COLOR_GAZE, 2);
+            bool isMatched = matches.Any((pair) => peak == pair.Item2);
+            plot.AddVLine(peak.TimestampStart, COLOR_GAZE, isMatched ? 1 : 2);
         }
 
         State = ControllerState.PeaksDetected;

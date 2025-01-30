@@ -1,4 +1,5 @@
 ﻿using MathNet.Numerics.Statistics;
+using System.ComponentModel;
 using System.Text.Json;
 
 namespace VdlParser;
@@ -18,7 +19,7 @@ public enum PeakDirection
     Downward
 }
 
-public class PeakDetector
+public class PeakDetector : INotifyPropertyChanged
 {
     public int BufferSize
     {
@@ -31,6 +32,8 @@ public class PeakDetector
     public long MaxPeakDuration { get; set; } = 1500;   // ms
     public long MinInterPeakInterval { get; set; } = 1000;   // ms
     public PeakDirection Direction { get; set; } = PeakDirection.Upward;
+
+    public event PropertyChangedEventHandler? PropertyChanged;
 
     public static PeakDetector Load(DataSourceType dataSourceType)
     {
@@ -173,6 +176,15 @@ public class PeakDetector
         }
 
         return peaks.ToArray();
+    }
+
+    public void ReversePeakSearchDirection()
+    {
+        PeakThreshold = -PeakThreshold;
+        Direction = Direction == PeakDirection.Upward ? PeakDirection.Downward : PeakDirection.Upward;
+
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(PeakThreshold)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Direction)));
     }
 
     // Internal

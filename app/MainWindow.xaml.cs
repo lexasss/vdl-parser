@@ -74,6 +74,11 @@ public partial class MainWindow : Window
 
     private void PeakDetectorDataSource_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
+        if (IsLoaded && ((ComboBox)sender).SelectedItem is GazeRotation)
+        {
+            Controller.GazePeakDetector.ReversePeakSearchDirection();
+        }
+
         if (Controller.State == ControllerState.RawDataDisplayed)
         {
             Controller.Display((Vdl)lsbVdls.SelectedItem, plot);
