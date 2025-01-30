@@ -37,7 +37,7 @@ public partial class MainWindow : Window
         }
         else if (sender is ListBox lsb && lsb.SelectedItem == null)
         {
-            plot.Reset();
+            Controller.Reset(plot);
             txbSummary.Text = "";
         }
     }
@@ -70,5 +70,18 @@ public partial class MainWindow : Window
     private void ApplyPeakDetector_Click(object sender, RoutedEventArgs e)
     {
         txbSummary.Text = Controller.AnalyzeAndDraw((Vdl)lsbVdls.SelectedItem, plot);
+    }
+
+    private void PeakDetectorDataSource_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (Controller.State == ControllerState.RawDataDisplayed)
+        {
+            Controller.Display((Vdl)lsbVdls.SelectedItem, plot);
+            txbSummary.Text = "";
+        }
+        else if (Controller.State == ControllerState.PeaksDetected)
+        {
+            txbSummary.Text = Controller.AnalyzeAndDraw((Vdl)lsbVdls.SelectedItem, plot);
+        }
     }
 }

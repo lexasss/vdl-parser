@@ -15,8 +15,16 @@ public enum GazeRotation
     Pitch
 }
 
+public enum ControllerState
+{
+    Empty,
+    RawDataDisplayed,
+    PeaksDetected
+}
+
 public class Controller : IDisposable
 {
+
     public ObservableCollection<Vdl> Vdls { get; }
     public PeakDetector HandPeakDetector { get; } = PeakDetector.Load(DataSourceType.Finger);
     public PeakDetector GazePeakDetector { get; } = PeakDetector.Load(DataSourceType.Eye);
@@ -24,9 +32,17 @@ public class Controller : IDisposable
     public GazeRotation GazeRotation { get; set; } = GazeRotation.Yaw;
     public int MaxFingerGazeDelay { get; set; } = 1500; // ms
 
+    public ControllerState State { get; set; } = ControllerState.Empty;
+
     public Controller()
     {
         Vdls = new ObservableCollection<Vdl>(_vdls);
+    }
+
+    public void Reset(Graph plot)
+    {
+        plot.Reset();
+        State = ControllerState.Empty;
     }
 
     public void Add(Vdl vdl)
@@ -41,6 +57,8 @@ public class Controller : IDisposable
         plot.Reset();
         plot.AddCurve(fingerTs, COLOR_FINGER);
         plot.AddCurve(gazeTs, COLOR_GAZE);
+
+        State = ControllerState.RawDataDisplayed;
     }
 
     public string AnalyzeAndDraw(Vdl vdl, Graph plot)
@@ -72,6 +90,8 @@ public class Controller : IDisposable
             plot.AddVLine(match.Item1.TimestampStart, COLOR_FINGER, 2);
             plot.AddVLine(match.Item2.TimestampStart, COLOR_GAZE, 2);
         }
+
+        State = ControllerState.PeaksDetected;
 
         return string.Join('\n', [
             $"Sample count: {vdl.RecordCount}",

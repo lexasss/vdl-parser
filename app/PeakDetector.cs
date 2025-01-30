@@ -22,7 +22,8 @@ public class PeakDetector
 
     public double PeakThreshold { get; set; } = 1.5;
     public double IgnoranceThrehold { get; set; } = 20;
-    public long MaxPeakDuration { get; set; } = 2500;
+    public long MaxPeakDuration { get; set; } = 1500;   // ms
+    public long MinInterPeakInterval { get; set; } = 1000;   // ms
 
     public static PeakDetector Load(DataSourceType dataSourceType)
     {
@@ -84,6 +85,7 @@ public class PeakDetector
 
         bool isInPeak = false;
         long timestampStart = 0;
+        long timestampLastPeakEnd = 0;
         int timestampStartIndex = 0;
 
         bool SeekBufferHead()
@@ -118,11 +120,14 @@ public class PeakDetector
             var (avg1, avg2) = GetAverages(chunk);
             var difference = avg2 - avg1;
 
-            if (!isInPeak && difference > PeakThreshold)
+            var timestampCurrent = chunk[_bufferSize / 2].Timestamp;
+            var timeElapsedSinceTheLastPeak = timestampLastPeakEnd > 0 ? (timestampCurrent - timestampLastPeakEnd) : long.MaxValue;
+
+            if (!isInPeak && difference > PeakThreshold && timeElapsedSinceTheLastPeak > MinInterPeakInterval)
             {
                 isInPeak = true;
 
-                timestampStart = chunk[_bufferSize / 2].Timestamp;
+                timestampStart = timestampCurrent;
                 timestampStartIndex = i - _bufferSize / 2;
             }
             else if (isInPeak && difference < -PeakThreshold)
@@ -131,7 +136,8 @@ public class PeakDetector
 
                 if (timestampStart != 0)
                 {
-                    var timestampEnd = chunk[_bufferSize / 2].Timestamp;
+                    var timestampEnd = timestampCurrent;
+                    timestampLastPeakEnd = timestampEnd;
 
                     if ((timestampEnd - timestampStart) < MaxPeakDuration)
                     {
