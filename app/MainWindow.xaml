@@ -7,7 +7,7 @@
         xmlns:local="clr-namespace:VdlParser"
         mc:Ignorable="d"
         Title="VDL file parser"
-        Height="480" Width="1200"
+        Height="520" Width="1200"
         Icon="/Assets/images/icon.png"
         Closed="Window_Closed">
 
@@ -81,6 +81,14 @@
             </ObjectDataProvider.MethodParameters>
         </ObjectDataProvider>
 
+        <ObjectDataProvider x:Key="PeakDirectionProvider"
+                            MethodName="GetValues"
+                            ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="local:PeakDirection"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+
     </Window.Resources>
 
     <Grid>
@@ -137,6 +145,7 @@
                             <RowDefinition/>
                             <RowDefinition/>
                             <RowDefinition/>
+                            <RowDefinition/>
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition/>
@@ -151,7 +160,7 @@
                         <TextBox Grid.Row="1" Grid.Column="1"
                                  Text="{Binding BufferSize, Mode=TwoWay}"/>
                         <Label Grid.Row="2" Grid.Column="0"
-                               Content="Change threshold"/>
+                               Content="Peak relative threshold"/>
                         <TextBox Grid.Row="2" Grid.Column="1"
                                  Text="{Binding PeakThreshold, Mode=TwoWay}"/>
                         <Label Grid.Row="3" Grid.Column="0"
@@ -163,9 +172,14 @@
                         <TextBox Grid.Row="4" Grid.Column="1"
                                  Text="{Binding MinInterPeakInterval, Mode=TwoWay}"/>
                         <Label Grid.Row="5" Grid.Column="0"
+                               Content="Peak direction"/>
+                        <ComboBox Grid.Row="5" Grid.Column="1"
+                                  ItemsSource="{Binding Source={StaticResource PeakDirectionProvider}}"
+                                  SelectedItem="{Binding Direction, Mode=TwoWay}"/>
+                        <Label Grid.Row="6" Grid.Column="0"
                                Content="Data source"/>
                     </Grid>
-                    <ComboBox DataContext="{Binding Controller}"
+                    <ComboBox DataContext="{Binding Path=Controller.Settings}"
                               ItemsSource="{Binding Source={StaticResource FingerProvider}}"
                               SelectedItem="{Binding Finger, Mode=TwoWay}"
                               Margin="6,0,0,0"
@@ -175,6 +189,7 @@
 
                     <Grid DataContext="{Binding Path=Controller.GazePeakDetector, Mode=OneTime}">
                         <Grid.RowDefinitions>
+                            <RowDefinition/>
                             <RowDefinition/>
                             <RowDefinition/>
                             <RowDefinition/>
@@ -195,7 +210,7 @@
                         <TextBox Grid.Row="1" Grid.Column="1"
                                  Text="{Binding BufferSize, Mode=TwoWay}"/>
                         <Label Grid.Row="2" Grid.Column="0"
-                               Content="Change threshold"/>
+                               Content="Peak relative threshold"/>
                         <TextBox Grid.Row="2" Grid.Column="1"
                                  Text="{Binding PeakThreshold, Mode=TwoWay}"/>
                         <Label Grid.Row="3" Grid.Column="0"
@@ -207,9 +222,14 @@
                         <TextBox Grid.Row="4" Grid.Column="1"
                                  Text="{Binding MinInterPeakInterval, Mode=TwoWay}"/>
                         <Label Grid.Row="5" Grid.Column="0"
+                               Content="Peak direction"/>
+                        <ComboBox Grid.Row="5" Grid.Column="1"
+                                  ItemsSource="{Binding Source={StaticResource PeakDirectionProvider}}"
+                                  SelectedItem="{Binding Direction, Mode=TwoWay}"/>
+                        <Label Grid.Row="6" Grid.Column="0"
                                Content="Data source"/>
                     </Grid>
-                    <ComboBox DataContext="{Binding Controller}"
+                    <ComboBox DataContext="{Binding Path=Controller.Settings}"
                               ItemsSource="{Binding Source={StaticResource GazeDimensionProvider}}"
                               SelectedItem="{Binding GazeRotation, Mode=TwoWay}"
                               Margin="6,0,0,0"

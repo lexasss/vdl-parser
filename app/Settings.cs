@@ -2,11 +2,15 @@
 
 namespace VdlParser;
 
-internal class Settings : INotifyPropertyChanged
+public class Settings : INotifyPropertyChanged
 {
     public static Settings Instance => _instance ??= new();
 
     // Inter-session
+
+    public Finger Finger { get; set; } = Finger.Index;
+    public GazeRotation GazeRotation { get; set; } = GazeRotation.Yaw;
+    public int MaxFingerGazeDelay { get; set; } = 1500; // ms
 
     public string LogFolder
     {
@@ -25,23 +29,13 @@ internal class Settings : INotifyPropertyChanged
     public event EventHandler? Updated;
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public void ShowDialog()
-    {
-        /*
-        var modifiedSettings = new Settings();
-        var dialog = new SettingsDialog(modifiedSettings);
-        if (dialog.ShowDialog() ?? false)
-        {
-            modifiedSettings.Save();
-
-            Load();
-            Updated?.Invoke(this, EventArgs.Empty);
-        }*/
-    }
-
     public void Save()
     {
         var settings = Properties.Settings.Default;
+
+        settings.Finger = (int)Finger;
+        settings.GazeRotation = (int)GazeRotation;
+        settings.MaxFingerGazeDelay = MaxFingerGazeDelay;
 
         settings.LogFolder = LogFolder;
 
@@ -57,11 +51,17 @@ internal class Settings : INotifyPropertyChanged
     private Settings()
     {
         Load();
+
+        App.Current.Exit += (s, e) => Save();
     }
 
     private void Load()
     {
         var settings = Properties.Settings.Default;
+
+        Finger = (Finger)settings.Finger;
+        GazeRotation = (GazeRotation)settings.GazeRotation;
+        MaxFingerGazeDelay  = settings.MaxFingerGazeDelay;
 
         LogFolder = settings.LogFolder;
     }

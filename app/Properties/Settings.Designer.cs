@@ -58,5 +58,41 @@ namespace VdlParser.Properties {
                 this["GazePeakDetector"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public int Finger {
+            get {
+                return ((int)(this["Finger"]));
+            }
+            set {
+                this["Finger"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public int GazeRotation {
+            get {
+                return ((int)(this["GazeRotation"]));
+            }
+            set {
+                this["GazeRotation"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("1500")]
+        public int MaxFingerGazeDelay {
+            get {
+                return ((int)(this["MaxFingerGazeDelay"]));
+            }
+            set {
+                this["MaxFingerGazeDelay"] = value;
+            }
+        }
     }
 }

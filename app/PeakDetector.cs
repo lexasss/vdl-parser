@@ -12,6 +12,12 @@ public enum DataSourceType
     Eye
 }
 
+public enum PeakDirection
+{
+    Upward,
+    Downward
+}
+
 public class PeakDetector
 {
     public int BufferSize
@@ -24,6 +30,7 @@ public class PeakDetector
     public double IgnoranceThrehold { get; set; } = 20;
     public long MaxPeakDuration { get; set; } = 1500;   // ms
     public long MinInterPeakInterval { get; set; } = 1000;   // ms
+    public PeakDirection Direction { get; set; } = PeakDirection.Upward;
 
     public static PeakDetector Load(DataSourceType dataSourceType)
     {
@@ -77,60 +84,71 @@ public class PeakDetector
         settings.Save();
     }
 
-    public Peak[] Find(Sample[] timeseries)
+    public Peak[] Find(Sample[] samples)
     {
         var peaks = new List<Peak>();
+        var ignoranceThreshold = Direction switch
+        {
+            PeakDirection.Upward => IgnoranceThrehold,
+            PeakDirection.Downward => -IgnoranceThrehold,
+            _ => throw new NotImplementedException($"{Direction} direction is not supported")
+        };
 
-        int i = BufferSize;
+        int i = 0;
 
         bool isInPeak = false;
         long timestampStart = 0;
         long timestampLastPeakEnd = 0;
         int timestampStartIndex = 0;
 
+        // Advances "i" until the last "BufferSize" samples stay outside of the ignorance zone,
+        // which is limited by "IgnoranceThrehold" (depend on "Direction" whether it limits
+        // from the top or from the bottom)
+        // Returns "false" if no datapoints left to analyze
         bool SeekBufferHead()
         {
             var firstValidDatapointIndex = i;
-            while (firstValidDatapointIndex < timeseries.Length && timeseries[firstValidDatapointIndex].Value < IgnoranceThrehold)
+
+            while (firstValidDatapointIndex < samples.Length && IsBelowThreshold(samples[firstValidDatapointIndex].Value, ignoranceThreshold))
             {
                 firstValidDatapointIndex += 1;
             }
 
             i = firstValidDatapointIndex;
-            for (int j = i + 1; (i + j) < timeseries.Length && j < BufferSize; j++)
+            for (int j = i + 1; (i + j) < samples.Length && j < BufferSize; j++)
             {
-                if (timeseries[++i].Value < IgnoranceThrehold)
+                if (IsBelowThreshold(samples[++i].Value, ignoranceThreshold))
                 {
                     return SeekBufferHead();
                 }
             }
 
-            return i < timeseries.Length;
+            return i < samples.Length;
         }
 
         if (!SeekBufferHead())
             return peaks.ToArray();
 
-        while (++i < timeseries.Length)
+        while (++i < samples.Length)
         {
-            if (timeseries[i].Value < IgnoranceThrehold && !SeekBufferHead())
+            if (IsBelowThreshold(samples[i].Value, ignoranceThreshold) && !SeekBufferHead())
                 break;
 
-            var chunk = timeseries[(i - BufferSize)..i];
+            var chunk = samples[(i - BufferSize)..i];
             var (avg1, avg2) = GetAverages(chunk);
             var difference = avg2 - avg1;
 
             var timestampCurrent = chunk[_bufferSize / 2].Timestamp;
             var timeElapsedSinceTheLastPeak = timestampLastPeakEnd > 0 ? (timestampCurrent - timestampLastPeakEnd) : long.MaxValue;
 
-            if (!isInPeak && difference > PeakThreshold && timeElapsedSinceTheLastPeak > MinInterPeakInterval)
+            if (!isInPeak && IsAboveThreshold(difference, PeakThreshold) && timeElapsedSinceTheLastPeak > MinInterPeakInterval)
             {
                 isInPeak = true;
 
                 timestampStart = timestampCurrent;
                 timestampStartIndex = i - _bufferSize / 2;
             }
-            else if (isInPeak && difference < -PeakThreshold)
+            else if (isInPeak && IsBelowThreshold(difference, -PeakThreshold))
             {
                 isInPeak = false;
 
@@ -141,7 +159,7 @@ public class PeakDetector
 
                     if ((timestampEnd - timestampStart) < MaxPeakDuration)
                     {
-                        var peakValue = timeseries[timestampStartIndex..i].Select(s => s.Value).Median();
+                        var peakValue = samples[timestampStartIndex..i].Select(s => s.Value).Median();
                         peaks.Add(new Peak(timestampStartIndex, timestampStart, timestampEnd, peakValue));
                     }
                     else
@@ -185,4 +203,18 @@ public class PeakDetector
 
         return (sum1 / count1, sum2 / count2);
     }
+
+    private bool IsBelowThreshold(double value, double threshold) => Direction switch
+    {
+        PeakDirection.Upward => value < threshold,
+        PeakDirection.Downward => value > threshold,
+        _ => throw new NotImplementedException($"{Direction} direction is not supported")
+    };
+
+    private bool IsAboveThreshold(double value, double threshold) => Direction switch
+    {
+        PeakDirection.Upward => value > threshold,
+        PeakDirection.Downward => value < threshold,
+        _ => throw new NotImplementedException($"{Direction} direction is not supported")
+    };
 }

@@ -24,13 +24,11 @@ public enum ControllerState
 
 public class Controller : IDisposable
 {
-
     public ObservableCollection<Vdl> Vdls { get; }
     public PeakDetector HandPeakDetector { get; } = PeakDetector.Load(DataSourceType.Finger);
     public PeakDetector GazePeakDetector { get; } = PeakDetector.Load(DataSourceType.Eye);
-    public Finger Finger { get; set; } = Finger.Index;
-    public GazeRotation GazeRotation { get; set; } = GazeRotation.Yaw;
-    public int MaxFingerGazeDelay { get; set; } = 1500; // ms
+
+    public Settings Settings { get; } = Settings.Instance;
 
     public ControllerState State { get; set; } = ControllerState.Empty;
 
@@ -118,17 +116,17 @@ public class Controller : IDisposable
     List<Vdl> _vdls = [];
 
     private (Sample[], Sample[]) GetTimeseries(Vdl vdl) => (
-            Finger switch
+            Settings.Finger switch
             {
                 Finger.Index => vdl.Records.Select(record => new Sample(record.TimestampSystem, record.HandIndex.Y)).ToArray(),
                 Finger.Middle => vdl.Records.Select(record => new Sample(record.TimestampSystem, record.HandMiddle.Y)).ToArray(),
-                _ => throw new NotImplementedException($"{Finger} is not yet supported")
+                _ => throw new NotImplementedException($"{Settings.Finger} hand data source is not yet supported")
             },
-            GazeRotation switch
+            Settings.GazeRotation switch
             {
                 GazeRotation.Yaw => vdl.Records.Select(record => new Sample(record.TimestampSystem, record.Eye.Yaw)).ToArray(),
                 GazeRotation.Pitch => vdl.Records.Select(record => new Sample(record.TimestampSystem, record.Eye.Pitch)).ToArray(),
-                _ => throw new NotImplementedException($"{GazeRotation} is not yet supported")
+                _ => throw new NotImplementedException($"{Settings.GazeRotation} gaze data source is not yet supported")
             }
         );
 
@@ -142,7 +140,7 @@ public class Controller : IDisposable
             while (gazeIndex < gaze.Length)
             {
                 var gazePeak = gaze[gazeIndex++];
-                if (Math.Abs(gazePeak.TimestampStart - fingerPeak.TimestampStart) < MaxFingerGazeDelay)
+                if (Math.Abs(gazePeak.TimestampStart - fingerPeak.TimestampStart) < Settings.MaxFingerGazeDelay)
                 {
                     result.Add((fingerPeak, gazePeak));
                     break;
