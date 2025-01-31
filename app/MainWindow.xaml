@@ -117,13 +117,39 @@
 
         <Grid Grid.Column="1">
             <Grid.RowDefinitions>
-                <RowDefinition/>
-                <RowDefinition/>
+                <RowDefinition Height="2*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="1*"/>
             </Grid.RowDefinitions>
+            
             <local:Graph x:Name="plot"
                          Grid.Row="0"/>
-            <TextBox x:Name="txbSummary"
-                     Grid.Row="1"/>
+            <StackPanel Grid.Row="1">
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            Margin="0,8">
+                    <WrapPanel>
+                        <Label Content="Hand data source"/>
+                        <ComboBox DataContext="{Binding Path=Controller.Settings}"
+                              ItemsSource="{Binding Source={StaticResource FingerProvider}}"
+                              SelectedItem="{Binding Finger, Mode=TwoWay}"
+                              Margin="6,0,0,0"
+                              Width="80"
+                              SelectionChanged="PeakDetectorDataSource_SelectionChanged"/>
+                    </WrapPanel>
+                    <Separator Width="50" Background="Transparent"/>
+                    <WrapPanel>
+                        <Label Content="Gaze data source"/>
+                        <ComboBox DataContext="{Binding Path=Controller.Settings}"
+                              ItemsSource="{Binding Source={StaticResource GazeDimensionProvider}}"
+                              SelectedItem="{Binding GazeRotation, Mode=TwoWay}"
+                              Margin="6,0,0,0"
+                              Width="80"
+                              SelectionChanged="PeakDetectorDataSource_SelectionChanged"/>
+                    </WrapPanel>
+                </StackPanel>
+            </StackPanel>
+            <TextBox x:Name="txbSummary" Grid.Row="2"/>
         </Grid>
 
         <Border Grid.Column="2"
@@ -139,7 +165,6 @@
                             Margin="4">
                     <Grid DataContext="{Binding Path=Controller.HandPeakDetector, Mode=OneTime}">
                         <Grid.RowDefinitions>
-                            <RowDefinition/>
                             <RowDefinition/>
                             <RowDefinition/>
                             <RowDefinition/>
@@ -176,20 +201,12 @@
                         <ComboBox Grid.Row="5" Grid.Column="1"
                                   ItemsSource="{Binding Source={StaticResource PeakDirectionProvider}}"
                                   SelectedItem="{Binding Direction, Mode=TwoWay}"/>
-                        <Label Grid.Row="6" Grid.Column="0"
-                               Content="Data source"/>
                     </Grid>
-                    <ComboBox DataContext="{Binding Path=Controller.Settings}"
-                              ItemsSource="{Binding Source={StaticResource FingerProvider}}"
-                              SelectedItem="{Binding Finger, Mode=TwoWay}"
-                              Margin="6,0,0,0"
-                              SelectionChanged="PeakDetectorDataSource_SelectionChanged"/>
 
                     <Separator Margin="2,12"/>
 
                     <Grid DataContext="{Binding Path=Controller.GazePeakDetector, Mode=OneTime}">
                         <Grid.RowDefinitions>
-                            <RowDefinition/>
                             <RowDefinition/>
                             <RowDefinition/>
                             <RowDefinition/>
@@ -226,14 +243,7 @@
                         <ComboBox Grid.Row="5" Grid.Column="1"
                                   ItemsSource="{Binding Source={StaticResource PeakDirectionProvider}}"
                                   SelectedItem="{Binding Direction, Mode=TwoWay}"/>
-                        <Label Grid.Row="6" Grid.Column="0"
-                               Content="Data source"/>
                     </Grid>
-                    <ComboBox DataContext="{Binding Path=Controller.Settings}"
-                              ItemsSource="{Binding Source={StaticResource GazeDimensionProvider}}"
-                              SelectedItem="{Binding GazeRotation, Mode=TwoWay}"
-                              Margin="6,0,0,0"
-                              SelectionChanged="PeakDetectorDataSource_SelectionChanged"/>
                 </StackPanel>
 
                 <Button Grid.Row="1"

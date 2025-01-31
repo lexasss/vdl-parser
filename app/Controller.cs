@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
-using System.Reflection;
+using MathNet.Numerics;
+using MathNet.Numerics.Statistics;
 
 namespace VdlParser;
 
@@ -87,13 +88,15 @@ public class Controller : IDisposable
 
         State = ControllerState.PeaksDetected;
 
+        var diffs = matches.Select(pair => (double)(pair.Item2.TimestampStart - pair.Item1.TimestampStart));
+
         return string.Join('\n', [
             $"Sample count: {vdl.RecordCount}",
-            $"Finger peak count: {fingerPeaks.Length}",
+            $"Hand peak count: {fingerPeaks.Length}",
             $"Gaze peak count: {gazePeaks.Length}",
             $"Matches:",
-            $"  count = {matches.Length}",
-            $"  avg delay = {ComputeAverageDelay(matches)} ms",
+            $"  count = {matches.Length}/{fingerPeaks.Length} ({100*matches.Length/fingerPeaks.Length:F1}%)",
+            $"  gaze delay = {diffs.Median():F0} ms (SD = {diffs.StandardDeviation():F1} ms)",
         ]);
     }
 
@@ -150,15 +153,5 @@ public class Controller : IDisposable
         }
 
         return result.ToArray();
-    }
-
-    private long ComputeAverageDelay((Peak, Peak)[] pairs)
-    {
-        long sum = 0;
-        foreach (var pair in pairs)
-        {
-            sum += pair.Item2.TimestampStart - pair.Item1.TimestampStart;
-        }
-        return pairs.Length > 0 ? sum / pairs.Length : 0;
     }
 }
