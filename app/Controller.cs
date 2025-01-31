@@ -41,9 +41,9 @@ public class Controller : IDisposable
         Vdls = new ObservableCollection<Vdl>(_vdls);
     }
 
-    public void Reset(Graph plot)
+    public void Reset(Graph graph)
     {
-        plot.Reset();
+        graph.Reset();
         State = ControllerState.Empty;
     }
 
@@ -74,9 +74,9 @@ public class Controller : IDisposable
         var matches = MatchPeaks(handPeaks, gazePeaks);
 
         var gazeMisses = BlinkDetector.Find(gazeDatapoints);
+        var (pupilSize, pupilSizeStd) = EstimatePupilSize(vdl);
 
         var nbackTaskEvents = GetNBackTaskEvents(vdl);
-        var (pupilSize, pupilSizeStd) = EstimatePupilSize(vdl);
 
         State = ControllerState.DataProcessed;
 
@@ -85,18 +85,17 @@ public class Controller : IDisposable
         graph.Reset();
 
         var labels = new HashSet<string>();
+        string? EnsureSingle(string? label)
+        {
+            if (label != null && !labels.Add(label))
+                return null;
+            return label;
+        }
 
         foreach (var blink in gazeMisses.Where(gm => gm.IsBlink))
         {
-            string? label = "Blink";
-
-            if (labels.Contains(label))
-                label = null;
-            else
-                labels.Add(label);
-
             if (Settings.BlinkShape == BlinkShape.Strip)
-                graph.Plot.AddHorizontalSpan(blink.TimestampStart, blink.TimestampEnd, COLOR_BLINK, label: label);
+                graph.Plot.AddHorizontalSpan(blink.TimestampStart, blink.TimestampEnd, COLOR_BLINK, label: EnsureSingle("Blink"));
             else if (Settings.BlinkShape == BlinkShape.Ellipse)
                 graph.Plot.AddEllipse((blink.TimestampStart + blink.TimestampEnd) / 2, 0,
                     blink.Duration / 2, 2, COLOR_BLINK_ELLIPSE);
@@ -107,56 +106,19 @@ public class Controller : IDisposable
 
         foreach (var peak in handPeaks)
         {
-            string? label = "Hand peak start";
-
-            if (labels.Contains(label))
-                label = null;
-            else
-                labels.Add(label);
-
             bool isMatched = matches.Any((pair) => peak == pair.Item1);
-            graph.Plot.AddVerticalLine(peak.TimestampStart, COLOR_HAND, isMatched ? 1 : 2, label: label);
+            graph.Plot.AddVerticalLine(peak.TimestampStart, COLOR_HAND, isMatched ? 1 : 2, label: EnsureSingle("Hand peak start"));
         }
 
         foreach (var peak in gazePeaks)
         {
-            string? label = "Gaze peak start";
-
-            if (labels.Contains(label))
-                label = null;
-            else
-                labels.Add(label);
-
             bool isMatched = matches.Any((pair) => peak == pair.Item2);
-            graph.Plot.AddVerticalLine(peak.TimestampStart, COLOR_GAZE, isMatched ? 1 : 2, label: label);
+            graph.Plot.AddVerticalLine(peak.TimestampStart, COLOR_GAZE, isMatched ? 1 : 2, label: EnsureSingle("Gaze peak start"));
         }
 
         foreach (var (ts, nbte) in nbackTaskEvents)
         {
-            var color = nbte.Type switch
-            {
-                NBackTaskEventType.SessionStart or NBackTaskEventType.SessionEnd => System.Drawing.Color.Green,
-                NBackTaskEventType.TrialStart => System.Drawing.Color.Purple,
-                NBackTaskEventType.TrialResponse => System.Drawing.Color.Orange,
-                NBackTaskEventType.TrialEnd => System.Drawing.Color.Blue,
-                _ => System.Drawing.Color.Black
-            };
-            string? label = nbte.Type switch
-            {
-                NBackTaskEventType.SessionStart or NBackTaskEventType.SessionEnd => "Session start/end",
-                NBackTaskEventType.TrialStart => "Trial start",
-                NBackTaskEventType.TrialResponse => "Response",
-                NBackTaskEventType.TrialEnd => "Trial end",
-                _ => null
-            };
-            if (label != null)
-            {
-                if (labels.Contains(label))
-                    label = null;
-                else
-                    labels.Add(label);
-            }
-            graph.Plot.AddMarker(ts, 60, size: 12, color: color, label: label);
+            graph.Plot.AddMarker(ts, 60, size: 12, color: NBackTaskEventColor(nbte.Type), label: EnsureSingle(NBackTaskEventLabel(nbte.Type)));
         }
 
         graph.Render();
@@ -197,6 +159,24 @@ public class Controller : IDisposable
     readonly System.Drawing.Color COLOR_BLINK_ELLIPSE = System.Drawing.Color.Gray;
 
     List<Vdl> _vdls = [];
+
+    private System.Drawing.Color NBackTaskEventColor(NBackTaskEventType type) => type switch
+    {
+        NBackTaskEventType.SessionStart or NBackTaskEventType.SessionEnd => System.Drawing.Color.Green,
+        NBackTaskEventType.TrialStart => System.Drawing.Color.Purple,
+        NBackTaskEventType.TrialResponse => System.Drawing.Color.Orange,
+        NBackTaskEventType.TrialEnd => System.Drawing.Color.Blue,
+        _ => System.Drawing.Color.Black
+    };
+
+    private string? NBackTaskEventLabel(NBackTaskEventType type) => type switch
+    {
+        NBackTaskEventType.SessionStart or NBackTaskEventType.SessionEnd => "Session start/end",
+        NBackTaskEventType.TrialStart => "Trial start",
+        NBackTaskEventType.TrialResponse => "Response",
+        NBackTaskEventType.TrialEnd => "Trial end",
+        _ => null
+    };
 
     private long GetTimestamp(Record record) => Settings.TimestampSource switch
     {
