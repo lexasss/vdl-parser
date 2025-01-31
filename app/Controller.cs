@@ -73,7 +73,12 @@ public class Controller : IDisposable
 
         var gazeMisses = BlinkDetector.Find(gazeDatapoints);
 
+        var nbackTaskEvents = vdl.Records.Where(r => r.NBackTaskEvent != null).Select(r => r.NBackTaskEvent!).ToArray();
+
+        State = ControllerState.PeaksDetected;
+
         // Draw
+
         graph.Reset();
         graph.AddCurve(fingerDatapoints, COLOR_FINGER);
         graph.AddCurve(gazeDatapoints, COLOR_GAZE);
@@ -96,9 +101,31 @@ public class Controller : IDisposable
                 blink.Duration / 2, 2, COLOR_BLINK);
         }
 
+        foreach (var nbte in nbackTaskEvents)
+        {
+            //System.Diagnostics.Debug.WriteLine(nbte);
+            var color = nbte.Type switch
+            {
+                NBackTaskEventType.SessionStart or NBackTaskEventType.SessionEnd => System.Drawing.Color.Green,
+                NBackTaskEventType.TrialStart => System.Drawing.Color.Purple,
+                NBackTaskEventType.TrialResponse => System.Drawing.Color.Yellow,
+                NBackTaskEventType.TrialEnd => System.Drawing.Color.Blue,
+                _ => System.Drawing.Color.Orange
+            };
+            var label = nbte.Type switch
+            {
+                NBackTaskEventType.SessionStart => "S",
+                NBackTaskEventType.SessionEnd => "F",
+                NBackTaskEventType.TrialStart => (nbte as NBackTaskTrial)?.Id.ToString(),
+                NBackTaskEventType.TrialEnd => (nbte as NBackTaskTrialResult)?.IsSuccess ?? false ? "o" : "!",
+                _ => null
+            };
+            graph.Plot.AddMarker(nbte.Timestamp, 60, size: 14, color: color, label: label);
+        }
+
         graph.Render();
 
-        State = ControllerState.PeaksDetected;
+        // Statistics
 
         var gazeHandIntervals = matches.Select(pair => (double)(pair.Item2.TimestampStart - pair.Item1.TimestampStart));
 

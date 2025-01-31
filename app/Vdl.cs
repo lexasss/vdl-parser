@@ -40,11 +40,16 @@ public class Vdl
                     t2 = record.TimestampHeadset;
                 }
 
-                records.Add(record with
+                var newRec = record with
                 {
                     TimestampSystem = record.TimestampSystem - t1,
-                    TimestampHeadset = record.TimestampHeadset - t2
-                });
+                    TimestampHeadset = record.TimestampHeadset - t2,
+                };
+                if (newRec.NBackTaskEvent != null)
+                {
+                    newRec.NBackTaskEvent.Timestamp = record.TimestampSystem - t1;
+                }
+                records.Add(newRec);
             }
         }
 

@@ -8,13 +8,23 @@ public enum NBackTaskEventType
 {
     SessionStart,
     TrialStart,
-    Response,
+    TrialResponse,
     TrialEnd,
     SessionEnd
 }
-public record class NBackTaskEvent(NBackTaskEventType Type);
-public record class NBackTaskTrial(NBackTaskEventType Type, int ID) : NBackTaskEvent(Type);
-public record class NBackTaskTrialResult(NBackTaskEventType Type, int ID, bool IsSuccess) : NBackTaskTrial(Type, ID);
+public class NBackTaskEvent(long timestamp, NBackTaskEventType type)
+{
+    public long Timestamp { get; set; } = timestamp;
+    public NBackTaskEventType Type => type;
+}
+public class NBackTaskTrial(long timestamp, NBackTaskEventType type, int id) : NBackTaskEvent(timestamp, type)
+{
+    public int Id => id;
+}
+public class NBackTaskTrialResult(long timestamp, NBackTaskEventType type, int id, bool isSuccess) : NBackTaskTrial(timestamp, type, id)
+{
+    public bool IsSuccess => isSuccess;
+}
 
 public record class Record(
     long TimestampSystem,
@@ -37,7 +47,8 @@ public record class Record(
 
         try
         {
-            result = new Record(long.Parse(p[0]) / 10000, long.Parse(p[1]) / 10000,
+            long ts = long.Parse(p[0]) / 10000;
+            result = new Record(ts, long.Parse(p[1]) / 10000,
                 new Rotation(double.Parse(p[3]), double.Parse(p[2]), 0),
                 new Rotation(double.Parse(p[5]), double.Parse(p[4]), 0),
                 new Pupil(double.Parse(p[6]), double.Parse(p[7])),
@@ -49,11 +60,11 @@ public record class Record(
                 string.IsNullOrEmpty(p[22]) ? null :
                     p[22].Split(' ') switch
                     {
-                        ["STR"] => new NBackTaskEvent(NBackTaskEventType.SessionStart),
-                        ["SET", var id] => new NBackTaskTrial(NBackTaskEventType.TrialStart, int.Parse(id)),
-                        ["ACT", var id] => new NBackTaskTrial(NBackTaskEventType.Response, int.Parse(id)),
-                        ["RES", var id, var isSuccess] => new NBackTaskTrialResult(NBackTaskEventType.Response, int.Parse(id), bool.Parse(isSuccess)),
-                        ["FIN"] => new NBackTaskEvent(NBackTaskEventType.SessionEnd),
+                        ["STR"] => new NBackTaskEvent(ts, NBackTaskEventType.SessionStart),
+                        ["SET", string id] => new NBackTaskTrial(ts, NBackTaskEventType.TrialStart, int.Parse(id)),
+                        ["ACT", string id] => new NBackTaskTrial(ts, NBackTaskEventType.TrialResponse, int.Parse(id)),
+                        ["RES", string id, string isSuccess] => new NBackTaskTrialResult(ts, NBackTaskEventType.TrialEnd, int.Parse(id), bool.Parse(isSuccess)),
+                        ["FIN"] => new NBackTaskEvent(ts, NBackTaskEventType.SessionEnd),
                         _ => throw new Exception($"Unknown NBackTask event: {p[22]}")
                     }
             );
