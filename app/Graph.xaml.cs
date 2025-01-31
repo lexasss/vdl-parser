@@ -5,6 +5,8 @@ namespace VdlParser;
 
 public partial class Graph : UserControl
 {
+    public Plot Plot => chart.Plot;
+
     public Graph()
     {
         InitializeComponent();
@@ -30,9 +32,9 @@ public partial class Graph : UserControl
         chart.Render();
     }
 
-    public void AddVLine(double X, System.Drawing.Color color, float width = 1)
+    public void Render()
     {
-        chart.Plot.AddVerticalLine(X, color, width);
+        chart.Plot.AxisAuto();
         chart.Render();
     }
 
@@ -42,8 +44,5 @@ public partial class Graph : UserControl
         var y = samples.Select(s => s.Value);
 
         chart.Plot.AddScatter(x.ToArray(), y.ToArray(), color, lineWidth: 2, markerShape: MarkerShape.none);
-
-        chart.Plot.AxisAuto();
-        chart.Render();
     }
 }

@@ -52,16 +52,17 @@ public class Controller : IDisposable
 
     public void Display(Vdl vdl, Graph plot)
     {
-        var (fingerTs, gazeTs) = GetTimeseries(vdl);
+        var (fingerDatapoint, gazeDatapoint) = GetTimeseries(vdl);
 
         plot.Reset();
-        plot.AddCurve(fingerTs, COLOR_FINGER);
-        plot.AddCurve(gazeTs, COLOR_GAZE);
+        plot.AddCurve(fingerDatapoint, COLOR_FINGER);
+        plot.AddCurve(gazeDatapoint, COLOR_GAZE);
+        plot.Render();
 
         State = ControllerState.RawDataDisplayed;
     }
 
-    public string AnalyzeAndDraw(Vdl vdl, Graph plot)
+    public string AnalyzeAndDraw(Vdl vdl, Graph graph)
     {
         var (fingerDatapoints, gazeDatapoints) = GetTimeseries(vdl);
 
@@ -73,25 +74,33 @@ public class Controller : IDisposable
         var gazeMisses = BlinkDetector.Find(gazeDatapoints);
 
         // Draw
-        plot.Reset();
-        plot.AddCurve(fingerDatapoints, COLOR_FINGER);
-        plot.AddCurve(gazeDatapoints, COLOR_GAZE);
+        graph.Reset();
+        graph.AddCurve(fingerDatapoints, COLOR_FINGER);
+        graph.AddCurve(gazeDatapoints, COLOR_GAZE);
 
         foreach (var peak in fingerPeaks)
         {
             bool isMatched = matches.Any((pair) => peak == pair.Item1);
-            plot.AddVLine(peak.TimestampStart, COLOR_FINGER, isMatched ? 1 : 2);
+            graph.Plot.AddVerticalLine(peak.TimestampStart, COLOR_FINGER, isMatched ? 1 : 2);
         }
 
         foreach (var peak in gazePeaks)
         {
             bool isMatched = matches.Any((pair) => peak == pair.Item2);
-            plot.AddVLine(peak.TimestampStart, COLOR_GAZE, isMatched ? 1 : 2);
+            graph.Plot.AddVerticalLine(peak.TimestampStart, COLOR_GAZE, isMatched ? 1 : 2);
         }
+
+        foreach (var blink in gazeMisses.Where(gm => gm.IsBlink))
+        {
+            graph.Plot.AddEllipse((blink.TimestampStart + blink.TimestampEnd) / 2, 0,
+                blink.Duration / 2, 2, COLOR_BLINK);
+        }
+
+        graph.Render();
 
         State = ControllerState.PeaksDetected;
 
-        var diffs = matches.Select(pair => (double)(pair.Item2.TimestampStart - pair.Item1.TimestampStart));
+        var gazeHandIntervals = matches.Select(pair => (double)(pair.Item2.TimestampStart - pair.Item1.TimestampStart));
 
         return string.Join('\n', [
             $"Sample count: {vdl.RecordCount}",
@@ -99,7 +108,7 @@ public class Controller : IDisposable
             $"Gaze peak count: {gazePeaks.Length}",
             $"Matches:",
             $"  count = {matches.Length}/{fingerPeaks.Length} ({100*matches.Length/fingerPeaks.Length:F1}%)",
-            $"  gaze delay = {diffs.Median():F0} ms (SD = {diffs.StandardDeviation():F1} ms)",
+            $"  gaze delay = {gazeHandIntervals.Median():F0} ms (SD = {gazeHandIntervals.StandardDeviation():F1} ms)",
             $"Gaze-lost event count: {gazeMisses.Length}",
             $"  blinks: {gazeMisses.Where(gm => gm.IsBlink).Count()}",
             $"  eyes closed or lost: {gazeMisses.Where(gm => gm.Duration > BlinkDetector.BlinkMaxDuration).Count()}",
@@ -119,6 +128,7 @@ public class Controller : IDisposable
 
     readonly System.Drawing.Color COLOR_FINGER = System.Drawing.Color.Blue;
     readonly System.Drawing.Color COLOR_GAZE = System.Drawing.Color.Red;
+    readonly System.Drawing.Color COLOR_BLINK = System.Drawing.Color.Gray;
 
     List<Vdl> _vdls = [];
 
