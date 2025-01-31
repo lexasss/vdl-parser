@@ -28,6 +28,7 @@ public class Controller : IDisposable
     public ObservableCollection<Vdl> Vdls { get; }
     public PeakDetector HandPeakDetector { get; } = PeakDetector.Load(DataSourceType.Finger);
     public PeakDetector GazePeakDetector { get; } = PeakDetector.Load(DataSourceType.Eye);
+    public BlinkDetector BlinkDetector { get; } = BlinkDetector.Load();
 
     public Settings Settings { get; } = Settings.Instance;
 
@@ -62,17 +63,19 @@ public class Controller : IDisposable
 
     public string AnalyzeAndDraw(Vdl vdl, Graph plot)
     {
-        var (fingerTs, gazeTs) = GetTimeseries(vdl);
+        var (fingerDatapoints, gazeDatapoints) = GetTimeseries(vdl);
 
-        var fingerPeaks = HandPeakDetector.Find(fingerTs);
-        var gazePeaks = GazePeakDetector.Find(gazeTs);
+        var fingerPeaks = HandPeakDetector.Find(fingerDatapoints);
+        var gazePeaks = GazePeakDetector.Find(gazeDatapoints);
 
         var matches = MatchPeaks(fingerPeaks, gazePeaks);
 
+        var gazeMisses = BlinkDetector.Find(gazeDatapoints);
+
         // Draw
         plot.Reset();
-        plot.AddCurve(fingerTs, COLOR_FINGER);
-        plot.AddCurve(gazeTs, COLOR_GAZE);
+        plot.AddCurve(fingerDatapoints, COLOR_FINGER);
+        plot.AddCurve(gazeDatapoints, COLOR_GAZE);
 
         foreach (var peak in fingerPeaks)
         {
@@ -97,6 +100,9 @@ public class Controller : IDisposable
             $"Matches:",
             $"  count = {matches.Length}/{fingerPeaks.Length} ({100*matches.Length/fingerPeaks.Length:F1}%)",
             $"  gaze delay = {diffs.Median():F0} ms (SD = {diffs.StandardDeviation():F1} ms)",
+            $"Gaze-lost event count: {gazeMisses.Length}",
+            $"  blinks: {gazeMisses.Where(gm => gm.IsBlink).Count()}",
+            $"  eyes closed or lost: {gazeMisses.Where(gm => gm.Duration > BlinkDetector.BlinkMaxDuration).Count()}",
         ]);
     }
 
@@ -104,6 +110,8 @@ public class Controller : IDisposable
     {
         PeakDetector.Save(DataSourceType.Finger, HandPeakDetector);
         PeakDetector.Save(DataSourceType.Eye, GazePeakDetector);
+        BlinkDetector.Save(BlinkDetector);
+
         GC.SuppressFinalize(this);
     }
 

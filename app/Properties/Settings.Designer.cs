@@ -94,5 +94,17 @@ namespace VdlParser.Properties {
                 this["MaxFingerGazeDelay"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string BlinkDetector {
+            get {
+                return ((string)(this["BlinkDetector"]));
+            }
+            set {
+                this["BlinkDetector"] = value;
+            }
+        }
     }
 }

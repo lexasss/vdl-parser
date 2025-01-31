@@ -7,7 +7,8 @@
         xmlns:local="clr-namespace:VdlParser"
         mc:Ignorable="d"
         Title="VDL file parser"
-        Height="520" Width="1200"
+        Height="530" Width="1200"
+        MinHeight="520" MinWidth="1000"
         Icon="/Assets/images/icon.png"
         Closed="Window_Closed">
 
@@ -149,7 +150,8 @@
                     </WrapPanel>
                 </StackPanel>
             </StackPanel>
-            <TextBox x:Name="txbSummary" Grid.Row="2"/>
+            <TextBox x:Name="txbSummary" Grid.Row="2"
+                     VerticalScrollBarVisibility="Auto"/>
         </Grid>
 
         <Border Grid.Column="2"
@@ -189,11 +191,11 @@
                         <TextBox Grid.Row="2" Grid.Column="1"
                                  Text="{Binding PeakThreshold, Mode=TwoWay}"/>
                         <Label Grid.Row="3" Grid.Column="0"
-                               Content="Max peak duration"/>
+                               Content="Max peak duration (ms)"/>
                         <TextBox Grid.Row="3" Grid.Column="1"
                                  Text="{Binding MaxPeakDuration, Mode=TwoWay}"/>
                         <Label Grid.Row="4" Grid.Column="0"
-                               Content="Min inter-peak interval"/>
+                               Content="Min inter-peak interval (ms)"/>
                         <TextBox Grid.Row="4" Grid.Column="1"
                                  Text="{Binding MinInterPeakInterval, Mode=TwoWay}"/>
                         <Label Grid.Row="5" Grid.Column="0"
@@ -231,11 +233,11 @@
                         <TextBox Grid.Row="2" Grid.Column="1"
                                  Text="{Binding PeakThreshold, Mode=TwoWay}"/>
                         <Label Grid.Row="3" Grid.Column="0"
-                               Content="Max peak duration"/>
+                               Content="Max peak duration (ms)"/>
                         <TextBox Grid.Row="3" Grid.Column="1"
                                  Text="{Binding MaxPeakDuration, Mode=TwoWay}"/>
                         <Label Grid.Row="4" Grid.Column="0"
-                               Content="Min inter-peak interval"/>
+                               Content="Min inter-peak interval (ms)"/>
                         <TextBox Grid.Row="4" Grid.Column="1"
                                  Text="{Binding MinInterPeakInterval, Mode=TwoWay}"/>
                         <Label Grid.Row="5" Grid.Column="0"
@@ -243,6 +245,32 @@
                         <ComboBox Grid.Row="5" Grid.Column="1"
                                   ItemsSource="{Binding Source={StaticResource PeakDirectionProvider}}"
                                   SelectedItem="{Binding Direction, Mode=TwoWay}"/>
+                    </Grid>
+
+                    <Separator Margin="2,12"/>
+
+                    <Grid DataContext="{Binding Path=Controller.BlinkDetector, Mode=OneTime}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition Width="60"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Label Grid.Row="0" Grid.ColumnSpan="2"
+                               Style="{StaticResource PdHeader}"
+                               Content="Blink detector"/>
+                        <Label Grid.Row="1" Grid.Column="0"
+                               Content="Min duration (ms)"/>
+                        <TextBox Grid.Row="1" Grid.Column="1"
+                                 Text="{Binding BlinkMinDuration, Mode=TwoWay}"/>
+                        <Label Grid.Row="2" Grid.Column="0"
+                               Content="Max duration (ms)"/>
+                        <TextBox Grid.Row="2" Grid.Column="1"
+                                 Text="{Binding BlinkMaxDuration, Mode=TwoWay}"/>
                     </Grid>
                 </StackPanel>
 
