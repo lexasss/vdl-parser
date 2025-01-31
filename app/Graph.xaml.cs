@@ -1,4 +1,5 @@
 ﻿using ScottPlot;
+using ScottPlot.Styles;
 using System.Windows.Controls;
 
 namespace VdlParser;
@@ -35,14 +36,15 @@ public partial class Graph : UserControl
     public void Render()
     {
         chart.Plot.AxisAuto();
+        chart.Plot.Legend(true);
         chart.Render();
     }
 
-    public void AddCurve(Sample[] samples, System.Drawing.Color color)
+    public void AddCurve(Sample[] samples, System.Drawing.Color color, string label)
     {
         var x = samples.Select(s => (double)s.Timestamp);
         var y = samples.Select(s => s.Value);
 
-        chart.Plot.AddScatter(x.ToArray(), y.ToArray(), color, lineWidth: 2, markerShape: MarkerShape.none);
+        chart.Plot.AddScatter(x.ToArray(), y.ToArray(), color, lineWidth: 2, markerShape: MarkerShape.none, label: label);
     }
 }

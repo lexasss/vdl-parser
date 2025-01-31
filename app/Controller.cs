@@ -1,19 +1,19 @@
 ﻿using System.Collections.ObjectModel;
-using MathNet.Numerics;
 using MathNet.Numerics.Statistics;
+using ScottPlot.Styles;
 
 namespace VdlParser;
 
-public enum Finger
+public enum HandDataSource
 {
-    Index,
-    Middle
+    IndexFinger,
+    MiddleFinger
 }
 
-public enum GazeRotation
+public enum GazeDataSource
 {
-    Yaw,
-    Pitch
+    YawRotation,
+    PitchRotation
 }
 
 public enum ControllerState
@@ -26,8 +26,8 @@ public enum ControllerState
 public class Controller : IDisposable
 {
     public ObservableCollection<Vdl> Vdls { get; }
-    public PeakDetector HandPeakDetector { get; } = PeakDetector.Load(DataSourceType.Finger);
-    public PeakDetector GazePeakDetector { get; } = PeakDetector.Load(DataSourceType.Eye);
+    public PeakDetector HandPeakDetector { get; } = PeakDetector.Load(DataSourceType.Hand);
+    public PeakDetector GazePeakDetector { get; } = PeakDetector.Load(DataSourceType.Gaze);
     public BlinkDetector BlinkDetector { get; } = BlinkDetector.Load();
 
     public Settings Settings { get; } = Settings.Instance;
@@ -50,77 +50,110 @@ public class Controller : IDisposable
         Vdls.Add(vdl);
     }
 
-    public void Display(Vdl vdl, Graph plot)
+    public void Display(Vdl vdl, Graph graph)
     {
-        var (fingerDatapoint, gazeDatapoint) = GetTimeseries(vdl);
+        var (handDatapoint, gazeDatapoint) = GetTimeseries(vdl);
 
-        plot.Reset();
-        plot.AddCurve(fingerDatapoint, COLOR_FINGER);
-        plot.AddCurve(gazeDatapoint, COLOR_GAZE);
-        plot.Render();
+        graph.Reset();
+        graph.AddCurve(handDatapoint, COLOR_HAND, "Hand");
+        graph.AddCurve(gazeDatapoint, COLOR_GAZE, "Gaze");
+        graph.Render();
 
         State = ControllerState.RawDataDisplayed;
     }
 
     public string AnalyzeAndDraw(Vdl vdl, Graph graph)
     {
-        var (fingerDatapoints, gazeDatapoints) = GetTimeseries(vdl);
+        var (handDatapoints, gazeDatapoints) = GetTimeseries(vdl);
 
-        var fingerPeaks = HandPeakDetector.Find(fingerDatapoints);
+        var handPeaks = HandPeakDetector.Find(handDatapoints);
         var gazePeaks = GazePeakDetector.Find(gazeDatapoints);
 
-        var matches = MatchPeaks(fingerPeaks, gazePeaks);
+        var matches = MatchPeaks(handPeaks, gazePeaks);
 
         var gazeMisses = BlinkDetector.Find(gazeDatapoints);
 
-        var nbackTaskEvents = vdl.Records.Where(r => r.NBackTaskEvent != null).Select(r => r.NBackTaskEvent!).ToArray();
+        var nbackTaskEvents = GetNBackTaskEvents(vdl);
 
         State = ControllerState.PeaksDetected;
 
         // Draw
 
         graph.Reset();
-        graph.AddCurve(fingerDatapoints, COLOR_FINGER);
-        graph.AddCurve(gazeDatapoints, COLOR_GAZE);
 
-        foreach (var peak in fingerPeaks)
+        var labels = new HashSet<string>();
+
+        foreach (var blink in gazeMisses.Where(gm => gm.IsBlink))
         {
+            string? label = "Blink";
+
+            if (labels.Contains(label))
+                label = null;
+            else
+                labels.Add(label);
+
+            if (Settings.BlinkShape == BlinkShape.Strip)
+                graph.Plot.AddHorizontalSpan(blink.TimestampStart, blink.TimestampEnd, COLOR_BLINK, label: label);
+            else if (Settings.BlinkShape == BlinkShape.Ellipse)
+                graph.Plot.AddEllipse((blink.TimestampStart + blink.TimestampEnd) / 2, 0,
+                    blink.Duration / 2, 2, COLOR_BLINK);
+        }
+
+        graph.AddCurve(handDatapoints, COLOR_HAND, "Hand");
+        graph.AddCurve(gazeDatapoints, COLOR_GAZE, "Gaze");
+
+        foreach (var peak in handPeaks)
+        {
+            string? label = "Hand peak start";
+
+            if (labels.Contains(label))
+                label = null;
+            else
+                labels.Add(label);
+
             bool isMatched = matches.Any((pair) => peak == pair.Item1);
-            graph.Plot.AddVerticalLine(peak.TimestampStart, COLOR_FINGER, isMatched ? 1 : 2);
+            graph.Plot.AddVerticalLine(peak.TimestampStart, COLOR_HAND, isMatched ? 1 : 2, label: label);
         }
 
         foreach (var peak in gazePeaks)
         {
+            string? label = "Gaze peak start";
+
+            if (labels.Contains(label))
+                label = null;
+            else
+                labels.Add(label);
+
             bool isMatched = matches.Any((pair) => peak == pair.Item2);
-            graph.Plot.AddVerticalLine(peak.TimestampStart, COLOR_GAZE, isMatched ? 1 : 2);
+            graph.Plot.AddVerticalLine(peak.TimestampStart, COLOR_GAZE, isMatched ? 1 : 2, label: label);
         }
 
-        foreach (var blink in gazeMisses.Where(gm => gm.IsBlink))
+        foreach (var (ts, nbte) in nbackTaskEvents)
         {
-            graph.Plot.AddEllipse((blink.TimestampStart + blink.TimestampEnd) / 2, 0,
-                blink.Duration / 2, 2, COLOR_BLINK);
-        }
-
-        foreach (var nbte in nbackTaskEvents)
-        {
-            //System.Diagnostics.Debug.WriteLine(nbte);
             var color = nbte.Type switch
             {
                 NBackTaskEventType.SessionStart or NBackTaskEventType.SessionEnd => System.Drawing.Color.Green,
                 NBackTaskEventType.TrialStart => System.Drawing.Color.Purple,
-                NBackTaskEventType.TrialResponse => System.Drawing.Color.Yellow,
+                NBackTaskEventType.TrialResponse => System.Drawing.Color.Orange,
                 NBackTaskEventType.TrialEnd => System.Drawing.Color.Blue,
-                _ => System.Drawing.Color.Orange
+                _ => System.Drawing.Color.Black
             };
-            var label = nbte.Type switch
+            string? label = nbte.Type switch
             {
-                NBackTaskEventType.SessionStart => "S",
-                NBackTaskEventType.SessionEnd => "F",
-                NBackTaskEventType.TrialStart => (nbte as NBackTaskTrial)?.Id.ToString(),
-                NBackTaskEventType.TrialEnd => (nbte as NBackTaskTrialResult)?.IsSuccess ?? false ? "o" : "!",
+                NBackTaskEventType.SessionStart or NBackTaskEventType.SessionEnd => "Session start/end",
+                NBackTaskEventType.TrialStart => "Trial start",
+                NBackTaskEventType.TrialResponse => "Response",
+                NBackTaskEventType.TrialEnd => "Trial end",
                 _ => null
             };
-            graph.Plot.AddMarker(nbte.Timestamp, 60, size: 14, color: color, label: label);
+            if (label != null)
+            {
+                if (labels.Contains(label))
+                    label = null;
+                else
+                    labels.Add(label);
+            }
+            graph.Plot.AddMarker(ts, 60, size: 12, color: color, label: label);
         }
 
         graph.Render();
@@ -128,13 +161,14 @@ public class Controller : IDisposable
         // Statistics
 
         var gazeHandIntervals = matches.Select(pair => (double)(pair.Item2.TimestampStart - pair.Item1.TimestampStart));
+        var matchesCountPercentage = handPeaks.Length > 0 ? 100 * matches.Length / handPeaks.Length : 0;
 
         return string.Join('\n', [
             $"Sample count: {vdl.RecordCount}",
-            $"Hand peak count: {fingerPeaks.Length}",
+            $"Hand peak count: {handPeaks.Length}",
             $"Gaze peak count: {gazePeaks.Length}",
             $"Matches:",
-            $"  count = {matches.Length}/{fingerPeaks.Length} ({100*matches.Length/fingerPeaks.Length:F1}%)",
+            $"  count = {matches.Length}/{handPeaks.Length} ({matchesCountPercentage:F1}%)",
             $"  gaze delay = {gazeHandIntervals.Median():F0} ms (SD = {gazeHandIntervals.StandardDeviation():F1} ms)",
             $"Gaze-lost event count: {gazeMisses.Length}",
             $"  blinks: {gazeMisses.Where(gm => gm.IsBlink).Count()}",
@@ -144,8 +178,8 @@ public class Controller : IDisposable
 
     public void Dispose()
     {
-        PeakDetector.Save(DataSourceType.Finger, HandPeakDetector);
-        PeakDetector.Save(DataSourceType.Eye, GazePeakDetector);
+        PeakDetector.Save(DataSourceType.Hand, HandPeakDetector);
+        PeakDetector.Save(DataSourceType.Gaze, GazePeakDetector);
         BlinkDetector.Save(BlinkDetector);
 
         GC.SuppressFinalize(this);
@@ -153,43 +187,56 @@ public class Controller : IDisposable
 
     // Internal
 
-    readonly System.Drawing.Color COLOR_FINGER = System.Drawing.Color.Blue;
+    readonly System.Drawing.Color COLOR_HAND = System.Drawing.Color.Blue;
     readonly System.Drawing.Color COLOR_GAZE = System.Drawing.Color.Red;
-    readonly System.Drawing.Color COLOR_BLINK = System.Drawing.Color.Gray;
+    readonly System.Drawing.Color COLOR_BLINK = System.Drawing.Color.LightGray;
 
     List<Vdl> _vdls = [];
 
-    private (Sample[], Sample[]) GetTimeseries(Vdl vdl) => (
-            Settings.Finger switch
+    private long GetTimestamp(Record record) => Settings.TimestampSource switch
+    {
+        TimestampSource.Headset => record.TimestampHeadset,
+        TimestampSource.System => record.TimestampSystem,
+        _ => throw new NotSupportedException($"{Settings.TimestampSource} timestamp source is not supported"),
+    };
+
+    private (Sample[], Sample[]) GetTimeseries(Vdl vdl) 
+    {
+        return (
+            Settings.HandDataSource switch
             {
-                Finger.Index => vdl.Records.Select(record => new Sample(record.TimestampSystem, record.HandIndex.Y)).ToArray(),
-                Finger.Middle => vdl.Records.Select(record => new Sample(record.TimestampSystem, record.HandMiddle.Y)).ToArray(),
-                _ => throw new NotImplementedException($"{Settings.Finger} hand data source is not yet supported")
+                HandDataSource.IndexFinger => vdl.Records.Select(record => new Sample(GetTimestamp(record), record.HandIndex.Y)).ToArray(),
+                HandDataSource.MiddleFinger => vdl.Records.Select(record => new Sample(GetTimestamp(record), record.HandMiddle.Y)).ToArray(),
+                _ => throw new NotImplementedException($"{Settings.HandDataSource} hand data source is not yet supported")
             },
-            Settings.GazeRotation switch
+            Settings.GazeDataSource switch
             {
-                GazeRotation.Yaw => vdl.Records.Select(record => new Sample(record.TimestampSystem, record.Eye.Yaw)).ToArray(),
-                GazeRotation.Pitch => vdl.Records.Select(record => new Sample(record.TimestampSystem, record.Eye.Pitch)).ToArray(),
-                _ => throw new NotImplementedException($"{Settings.GazeRotation} gaze data source is not yet supported")
+                GazeDataSource.YawRotation => vdl.Records.Select(record => new Sample(GetTimestamp(record), record.Eye.Yaw)).ToArray(),
+                GazeDataSource.PitchRotation => vdl.Records.Select(record => new Sample(GetTimestamp(record), record.Eye.Pitch)).ToArray(),
+                _ => throw new NotImplementedException($"{Settings.GazeDataSource} gaze data source is not yet supported")
             }
         );
+    }
 
-    private (Peak, Peak)[] MatchPeaks(Peak[] finger, Peak[] gaze)
+    private IEnumerable<(long, NBackTaskEvent)> GetNBackTaskEvents(Vdl vdl) =>
+        vdl.Records.Where(r => r.NBackTaskEvent != null).Select(record => (GetTimestamp(record), record.NBackTaskEvent!));
+
+    private (Peak, Peak)[] MatchPeaks(Peak[] handPeaks, Peak[] gazePeaks)
     {
         var result = new List<(Peak, Peak)>();
 
         int gazeIndex = 0;
-        foreach (Peak fingerPeak in finger)
+        foreach (Peak handPeak in handPeaks)
         {
-            while (gazeIndex < gaze.Length)
+            while (gazeIndex < gazePeaks.Length)
             {
-                var gazePeak = gaze[gazeIndex++];
-                if (Math.Abs(gazePeak.TimestampStart - fingerPeak.TimestampStart) < Settings.MaxFingerGazeDelay)
+                var gazePeak = gazePeaks[gazeIndex++];
+                if (Math.Abs(gazePeak.TimestampStart - handPeak.TimestampStart) < Settings.MaxHandGazeDelay)
                 {
-                    result.Add((fingerPeak, gazePeak));
+                    result.Add((handPeak, gazePeak));
                     break;
                 }
-                else if (gazePeak.TimestampStart > fingerPeak.TimestampStart)
+                else if (gazePeak.TimestampStart > handPeak.TimestampStart)
                 {
                     gazeIndex -= 1;
                     break;

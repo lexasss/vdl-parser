@@ -62,36 +62,36 @@ namespace VdlParser.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("0")]
-        public int Finger {
+        public int HandDataSource {
             get {
-                return ((int)(this["Finger"]));
+                return ((int)(this["HandDataSource"]));
             }
             set {
-                this["Finger"] = value;
+                this["HandDataSource"] = value;
             }
         }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("0")]
-        public int GazeRotation {
+        public int GazeDataSource {
             get {
-                return ((int)(this["GazeRotation"]));
+                return ((int)(this["GazeDataSource"]));
             }
             set {
-                this["GazeRotation"] = value;
+                this["GazeDataSource"] = value;
             }
         }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("1500")]
-        public int MaxFingerGazeDelay {
+        public int MaxHandGazeDelay {
             get {
-                return ((int)(this["MaxFingerGazeDelay"]));
+                return ((int)(this["MaxHandGazeDelay"]));
             }
             set {
-                this["MaxFingerGazeDelay"] = value;
+                this["MaxHandGazeDelay"] = value;
             }
         }
         
@@ -104,6 +104,30 @@ namespace VdlParser.Properties {
             }
             set {
                 this["BlinkDetector"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public int BlinkShape {
+            get {
+                return ((int)(this["BlinkShape"]));
+            }
+            set {
+                this["BlinkShape"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public int TimestampSource {
+            get {
+                return ((int)(this["TimestampSource"]));
+            }
+            set {
+                this["TimestampSource"] = value;
             }
         }
     }

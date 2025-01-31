@@ -6,8 +6,10 @@ public record class GazeDataMiss(long TimestampStart, long TimestampEnd, long Du
 
 public class BlinkDetector
 {
+    public int MinGazeLostInterval { get; set; } = 40; // ms
     public int BlinkMinDuration { get; set; } = 120; // ms
     public int BlinkMaxDuration { get; set; } = 350; // ms
+    public int MergeInterval { get; set; } = 100; // ms
 
     public static BlinkDetector Load()
     {
@@ -48,15 +50,27 @@ public class BlinkDetector
         var misses = new List<GazeDataMiss>();
 
         long lastTimestamp = 0;
+        long lastBlinkEndTimestamp = 0;
         foreach (Sample sample in samples)
         {
             if (lastTimestamp > 0)
             {
                 var interval = sample.Timestamp - lastTimestamp;
-                if (interval > 30)
+                if (interval > MinGazeLostInterval)
                 {
-                    misses.Add(new GazeDataMiss(lastTimestamp, sample.Timestamp, interval,
-                        interval >= BlinkMinDuration && interval <= BlinkMaxDuration));
+                    if (lastBlinkEndTimestamp > 0 && (lastTimestamp - lastBlinkEndTimestamp) < MergeInterval)
+                    {
+                        var missToBeReplaced = misses[^1];
+                        interval = sample.Timestamp - missToBeReplaced.TimestampStart;
+                        misses[^1] = new GazeDataMiss(missToBeReplaced.TimestampStart, sample.Timestamp, interval,
+                            interval >= BlinkMinDuration && interval <= BlinkMaxDuration);
+                    }
+                    else
+                    {
+                        misses.Add(new GazeDataMiss(lastTimestamp, sample.Timestamp, interval,
+                            interval >= BlinkMinDuration && interval <= BlinkMaxDuration));
+                    }
+                    lastBlinkEndTimestamp = sample.Timestamp;
                 }
             }
 

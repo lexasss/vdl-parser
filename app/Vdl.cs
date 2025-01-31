@@ -19,8 +19,8 @@ public class Vdl
 
     public static Vdl? Load(string filename)
     {
-        long t1 = 0;
-        long t2 = 0;
+        long tsSystem = 0;
+        long tsHeadset = 0;
 
         System.Diagnostics.Debug.WriteLine($"Loading: {Path.GetFileName(filename)}");
 
@@ -34,21 +34,17 @@ public class Vdl
 
             if (record != null)
             {
-                if (t1 == 0)
+                if (tsSystem == 0)
                 {
-                    t1 = record.TimestampSystem;
-                    t2 = record.TimestampHeadset;
+                    tsSystem = record.TimestampSystem;
+                    tsHeadset = record.TimestampHeadset;
                 }
 
                 var newRec = record with
                 {
-                    TimestampSystem = record.TimestampSystem - t1,
-                    TimestampHeadset = record.TimestampHeadset - t2,
+                    TimestampSystem = record.TimestampSystem - tsSystem,
+                    TimestampHeadset = record.TimestampHeadset - tsHeadset,
                 };
-                if (newRec.NBackTaskEvent != null)
-                {
-                    newRec.NBackTaskEvent.Timestamp = record.TimestampSystem - t1;
-                }
                 records.Add(newRec);
             }
         }

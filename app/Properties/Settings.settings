@@ -11,17 +11,23 @@
     <Setting Name="GazePeakDetector" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
-    <Setting Name="Finger" Type="System.Int32" Scope="User">
+    <Setting Name="HandDataSource" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">0</Value>
     </Setting>
-    <Setting Name="GazeRotation" Type="System.Int32" Scope="User">
+    <Setting Name="GazeDataSource" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">0</Value>
     </Setting>
-    <Setting Name="MaxFingerGazeDelay" Type="System.Int32" Scope="User">
+    <Setting Name="MaxHandGazeDelay" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">1500</Value>
     </Setting>
     <Setting Name="BlinkDetector" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="BlinkShape" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">0</Value>
+    </Setting>
+    <Setting Name="TimestampSource" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">0</Value>
     </Setting>
   </Settings>
 </SettingsFile>

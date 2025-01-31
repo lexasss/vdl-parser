@@ -74,7 +74,7 @@ public partial class MainWindow : Window
 
     private void PeakDetectorDataSource_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (IsLoaded && ((ComboBox)sender).SelectedItem is GazeRotation)
+        if (IsLoaded && ((ComboBox)sender).SelectedItem is GazeDataSource)
         {
             Controller.GazePeakDetector.ReversePeakSearchDirection();
         }

@@ -9,8 +9,8 @@ public record class Peak(int StartIndex, long TimestampStart, long TimestampEnd,
 
 public enum DataSourceType
 {
-    Finger,
-    Eye
+    Hand,
+    Gaze
 }
 
 public enum PeakDirection
@@ -40,15 +40,15 @@ public class PeakDetector : INotifyPropertyChanged
         var settings = Properties.Settings.Default;
         string json = dataSourceType switch
         {
-            DataSourceType.Finger => settings.HandPeakDetector,
-            DataSourceType.Eye => settings.GazePeakDetector,
+            DataSourceType.Hand => settings.HandPeakDetector,
+            DataSourceType.Gaze => settings.GazePeakDetector,
             _ => throw new NotSupportedException($"{dataSourceType} is not yet suppoted")
         };
 
         var defaultDetector = dataSourceType switch
         {
-            DataSourceType.Finger => new PeakDetector() { PeakThreshold = 1.5, BufferSize = 12, IgnoranceThrehold = 20 },
-            DataSourceType.Eye => new PeakDetector() { PeakThreshold = 10, BufferSize = 30, IgnoranceThrehold = -1000 },
+            DataSourceType.Hand => new PeakDetector() { PeakThreshold = 1.5, BufferSize = 12, IgnoranceThrehold = 20 },
+            DataSourceType.Gaze => new PeakDetector() { PeakThreshold = 10, BufferSize = 30, IgnoranceThrehold = -1000 },
             _ => throw new NotSupportedException($"{dataSourceType} is not yet suppoted")
         };
 
@@ -75,11 +75,11 @@ public class PeakDetector : INotifyPropertyChanged
         var json = JsonSerializer.Serialize(detector);
 
         var settings = Properties.Settings.Default;
-        if (dataSourceType == DataSourceType.Finger)
+        if (dataSourceType == DataSourceType.Hand)
         {
             settings.HandPeakDetector = json;
         }
-        else if (dataSourceType == DataSourceType.Eye)
+        else if (dataSourceType == DataSourceType.Gaze)
         {
             settings.GazePeakDetector = json;
         }

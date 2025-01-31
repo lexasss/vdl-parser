@@ -2,15 +2,29 @@
 
 namespace VdlParser;
 
+public enum BlinkShape
+{
+    Strip,
+    Ellipse
+}
+
+public enum TimestampSource
+{
+    System,
+    Headset
+}
+
 public class Settings : INotifyPropertyChanged
 {
     public static Settings Instance => _instance ??= new();
 
     // Inter-session
 
-    public Finger Finger { get; set; } = Finger.Index;
-    public GazeRotation GazeRotation { get; set; } = GazeRotation.Yaw;
-    public int MaxFingerGazeDelay { get; set; } = 1500; // ms
+    public HandDataSource HandDataSource { get; set; } = HandDataSource.IndexFinger;
+    public GazeDataSource GazeDataSource { get; set; } = GazeDataSource.YawRotation;
+    public int MaxHandGazeDelay { get; set; } = 1500; // ms
+    public BlinkShape BlinkShape { get; set; } = BlinkShape.Strip;
+    public TimestampSource TimestampSource { get; set; } = TimestampSource.System;
 
     public string LogFolder
     {
@@ -33,9 +47,11 @@ public class Settings : INotifyPropertyChanged
     {
         var settings = Properties.Settings.Default;
 
-        settings.Finger = (int)Finger;
-        settings.GazeRotation = (int)GazeRotation;
-        settings.MaxFingerGazeDelay = MaxFingerGazeDelay;
+        settings.HandDataSource = (int)HandDataSource;
+        settings.GazeDataSource = (int)GazeDataSource;
+        settings.MaxHandGazeDelay = MaxHandGazeDelay;
+        settings.BlinkShape = (int)BlinkShape;
+        settings.TimestampSource = (int)TimestampSource;
 
         settings.LogFolder = LogFolder;
 
@@ -59,9 +75,11 @@ public class Settings : INotifyPropertyChanged
     {
         var settings = Properties.Settings.Default;
 
-        Finger = (Finger)settings.Finger;
-        GazeRotation = (GazeRotation)settings.GazeRotation;
-        MaxFingerGazeDelay  = settings.MaxFingerGazeDelay;
+        HandDataSource = (HandDataSource)settings.HandDataSource;
+        GazeDataSource = (GazeDataSource)settings.GazeDataSource;
+        MaxHandGazeDelay  = settings.MaxHandGazeDelay;
+        BlinkShape = (BlinkShape)settings.BlinkShape;
+        TimestampSource = (TimestampSource)settings.TimestampSource;
 
         LogFolder = settings.LogFolder;
     }
