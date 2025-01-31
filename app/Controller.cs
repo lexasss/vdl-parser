@@ -76,6 +76,7 @@ public class Controller : IDisposable
         var gazeMisses = BlinkDetector.Find(gazeDatapoints);
 
         var nbackTaskEvents = GetNBackTaskEvents(vdl);
+        var (pupilSize, pupilSizeStd) = EstimatePupilSize(vdl);
 
         State = ControllerState.DataProcessed;
 
@@ -175,6 +176,7 @@ public class Controller : IDisposable
             $"Gaze-lost event count: {gazeMisses.Length}",
             $"  blinks: {gazeMisses.Where(gm => gm.IsBlink).Count()}",
             $"  eyes closed or lost: {gazeMisses.Where(gm => gm.Duration > BlinkDetector.BlinkMaxDuration).Count()}",
+            $"Pupil size: {pupilSize:F2} (SD = {pupilSizeStd:F2})",
         ]);
     }
 
@@ -249,4 +251,10 @@ public class Controller : IDisposable
 
         return result.ToArray();
     }
+
+    private (double, double) EstimatePupilSize(Vdl vdl) =>
+        vdl.Records
+            .Where(record => record.LeftPupil.Openness > 0.6 && record.RightPupil.Openness > 0.6)
+            .Select(record => (record.LeftPupil.Size + record.RightPupil.Size) / 2)
+            .MeanStandardDeviation();
 }
