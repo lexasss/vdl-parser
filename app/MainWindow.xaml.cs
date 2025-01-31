@@ -79,12 +79,33 @@ public partial class MainWindow : Window
             Controller.GazePeakDetector.ReversePeakSearchDirection();
         }
 
-        if (Controller.State == ControllerState.RawDataDisplayed)
+        if (Controller.State == ControllerState.DataDisplayed)
         {
             Controller.Display((Vdl)lsbVdls.SelectedItem, plot);
             txbSummary.Text = "";
         }
-        else if (Controller.State == ControllerState.PeaksDetected)
+        else if (Controller.State == ControllerState.DataProcessed)
+        {
+            txbSummary.Text = Controller.AnalyzeAndDraw((Vdl)lsbVdls.SelectedItem, plot);
+        }
+    }
+
+    private void BlinkShape_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (Controller.State == ControllerState.DataProcessed)
+        {
+            txbSummary.Text = Controller.AnalyzeAndDraw((Vdl)lsbVdls.SelectedItem, plot);
+        }
+    }
+
+    private void TimestampSource_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (Controller.State == ControllerState.DataDisplayed)
+        {
+            Controller.Display((Vdl)lsbVdls.SelectedItem, plot);
+            txbSummary.Text = "";
+        }
+        else if (Controller.State == ControllerState.DataProcessed)
         {
             txbSummary.Text = Controller.AnalyzeAndDraw((Vdl)lsbVdls.SelectedItem, plot);
         }

@@ -90,6 +90,22 @@
             </ObjectDataProvider.MethodParameters>
         </ObjectDataProvider>
 
+        <ObjectDataProvider x:Key="BlinkShapeProvider"
+                            MethodName="GetValues"
+                            ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="local:BlinkShape"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+
+        <ObjectDataProvider x:Key="TimestampSourceProvider"
+                            MethodName="GetValues"
+                            ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="local:TimestampSource"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+
     </Window.Resources>
 
     <Grid>
@@ -127,26 +143,52 @@
                          Grid.Row="0"/>
             <StackPanel Grid.Row="1">
                 <StackPanel Orientation="Horizontal"
+                            DataContext="{Binding Path=Controller.Settings}"
                             HorizontalAlignment="Center"
                             Margin="0,8">
+                    <StackPanel.Resources>
+                        <Style TargetType="Separator">
+                            <Setter Property="Width" Value="30"/>
+                            <Setter Property="Background" Value="Transparent"/>
+                        </Style>
+                        <Style TargetType="ComboBox">
+                            <Setter Property="Margin" Value="6,0,0,0"/>
+                        </Style>
+                        <Style TargetType="Label">
+                            <Setter Property="VerticalAlignment" Value="Center"/>
+                        </Style>
+                    </StackPanel.Resources>
+
                     <WrapPanel>
-                        <Label Content="Hand data source"/>
-                        <ComboBox DataContext="{Binding Path=Controller.Settings}"
-                              ItemsSource="{Binding Source={StaticResource HandDataSourceProvider}}"
-                              SelectedItem="{Binding HandDataSource, Mode=TwoWay}"
-                              Margin="6,0,0,0"
-                              Width="80"
-                              SelectionChanged="PeakDetectorDataSource_SelectionChanged"/>
+                        <Label Content="Timestamps: "/>
+                        <ComboBox ItemsSource="{Binding Source={StaticResource TimestampSourceProvider}}"
+                                  SelectedItem="{Binding TimestampSource, Mode=TwoWay}"
+                                  Width="80"
+                                  SelectionChanged="TimestampSource_SelectionChanged"/>
                     </WrapPanel>
-                    <Separator Width="50" Background="Transparent"/>
+                    <Separator/>
                     <WrapPanel>
-                        <Label Content="Gaze data source"/>
-                        <ComboBox DataContext="{Binding Path=Controller.Settings}"
-                              ItemsSource="{Binding Source={StaticResource GazeDataSourceProvider}}"
-                              SelectedItem="{Binding GazeDataSource, Mode=TwoWay}"
-                              Margin="6,0,0,0"
-                              Width="80"
-                              SelectionChanged="PeakDetectorDataSource_SelectionChanged"/>
+                        <Label Content="Hand: "/>
+                        <ComboBox ItemsSource="{Binding Source={StaticResource HandDataSourceProvider}}"
+                                  SelectedItem="{Binding HandDataSource, Mode=TwoWay}"
+                                  Width="104"
+                                  SelectionChanged="PeakDetectorDataSource_SelectionChanged"/>
+                    </WrapPanel>
+                    <Separator/>
+                    <WrapPanel>
+                        <Label Content="Gaze: "/>
+                        <ComboBox ItemsSource="{Binding Source={StaticResource GazeDataSourceProvider}}"
+                                  SelectedItem="{Binding GazeDataSource, Mode=TwoWay}"
+                                  Width="104"
+                                  SelectionChanged="PeakDetectorDataSource_SelectionChanged"/>
+                    </WrapPanel>
+                    <Separator/>
+                    <WrapPanel>
+                        <Label Content="Blinks: "/>
+                        <ComboBox ItemsSource="{Binding Source={StaticResource BlinkShapeProvider}}"
+                                  SelectedItem="{Binding BlinkShape, Mode=TwoWay}"
+                                  Width="80"
+                                  SelectionChanged="BlinkShape_SelectionChanged"/>
                     </WrapPanel>
                 </StackPanel>
             </StackPanel>

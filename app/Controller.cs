@@ -1,15 +1,17 @@
 ﻿using System.Collections.ObjectModel;
+using System.ComponentModel;
 using MathNet.Numerics.Statistics;
-using ScottPlot.Styles;
 
 namespace VdlParser;
 
+[TypeConverter(typeof(FriendlyEnumConverter))]
 public enum HandDataSource
 {
     IndexFinger,
     MiddleFinger
 }
 
+[TypeConverter(typeof(FriendlyEnumConverter))]
 public enum GazeDataSource
 {
     YawRotation,
@@ -19,8 +21,8 @@ public enum GazeDataSource
 public enum ControllerState
 {
     Empty,
-    RawDataDisplayed,
-    PeaksDetected
+    DataDisplayed,
+    DataProcessed
 }
 
 public class Controller : IDisposable
@@ -59,7 +61,7 @@ public class Controller : IDisposable
         graph.AddCurve(gazeDatapoint, COLOR_GAZE, "Gaze");
         graph.Render();
 
-        State = ControllerState.RawDataDisplayed;
+        State = ControllerState.DataDisplayed;
     }
 
     public string AnalyzeAndDraw(Vdl vdl, Graph graph)
@@ -75,7 +77,7 @@ public class Controller : IDisposable
 
         var nbackTaskEvents = GetNBackTaskEvents(vdl);
 
-        State = ControllerState.PeaksDetected;
+        State = ControllerState.DataProcessed;
 
         // Draw
 
@@ -96,7 +98,7 @@ public class Controller : IDisposable
                 graph.Plot.AddHorizontalSpan(blink.TimestampStart, blink.TimestampEnd, COLOR_BLINK, label: label);
             else if (Settings.BlinkShape == BlinkShape.Ellipse)
                 graph.Plot.AddEllipse((blink.TimestampStart + blink.TimestampEnd) / 2, 0,
-                    blink.Duration / 2, 2, COLOR_BLINK);
+                    blink.Duration / 2, 2, COLOR_BLINK_ELLIPSE);
         }
 
         graph.AddCurve(handDatapoints, COLOR_HAND, "Hand");
@@ -190,6 +192,7 @@ public class Controller : IDisposable
     readonly System.Drawing.Color COLOR_HAND = System.Drawing.Color.Blue;
     readonly System.Drawing.Color COLOR_GAZE = System.Drawing.Color.Red;
     readonly System.Drawing.Color COLOR_BLINK = System.Drawing.Color.LightGray;
+    readonly System.Drawing.Color COLOR_BLINK_ELLIPSE = System.Drawing.Color.Gray;
 
     List<Vdl> _vdls = [];
 

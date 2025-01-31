@@ -1,4 +1,6 @@
-﻿using System.Globalization;
+﻿using System.ComponentModel;
+using System.Globalization;
+using System.Text.RegularExpressions;
 using System.Windows.Data;
 
 namespace VdlParser;
@@ -26,4 +28,36 @@ public class PathUIConverter : IValueConverter
         string.IsNullOrEmpty((string)value) ? "[not selected yet]" : value;
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => value;
+}
+
+public class FriendlyEnumConverter(Type type) : EnumConverter(type)
+{
+    public override object? ConvertTo(ITypeDescriptorContext? context, CultureInfo? culture, object? value, Type destinationType)
+    {
+        if (destinationType == typeof(string))
+        {
+            return value == null ? string.Empty :
+                Regex.Replace(
+                        value.ToString() ?? "",
+                        "([A-Z])", " $1",
+                        RegexOptions.Compiled
+                    ).Trim();
+
+            /*
+            if (value != null)
+            {
+                FieldInfo fi = value.GetType().GetField(value.ToString());
+                if (fi != null)
+                {
+                    var attributes = (DescriptionAttribute[])fi.GetCustomAttributes(typeof(DescriptionAttribute), false);
+                    return ((attributes.Length > 0) && (!String.IsNullOrEmpty(attributes[0].Description))) ? attributes[0].Description : value.ToString();
+                }
+            }
+
+            return string.Empty;
+            */
+        }
+
+        return base.ConvertTo(context, culture, value, destinationType);
+    }
 }
