@@ -234,6 +234,8 @@ public class Controller : IDisposable
 
     private (double, double) EstimatePupilSize(Vdl vdl) =>
         vdl.Records
+            .SkipWhile(record => record.NBackTaskEvent?.Type != NBackTaskEventType.SessionStart)
+            .TakeWhile(record => record.NBackTaskEvent?.Type != NBackTaskEventType.SessionEnd)
             .Where(record => record.LeftPupil.Openness > 0.6 && record.RightPupil.Openness > 0.6)
             .Select(record => (record.LeftPupil.Size + record.RightPupil.Size) / 2)
             .MeanStandardDeviation();

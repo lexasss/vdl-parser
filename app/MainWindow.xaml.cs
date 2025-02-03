@@ -31,13 +31,13 @@ public partial class MainWindow : Window
             var vdl = e.AddedItems[0] as Vdl;
             if (vdl != null)
             {
-                Controller.Display(vdl, plot);
+                Controller.Display(vdl, graph);
                 txbSummary.Text = "";
             }
         }
         else if (sender is ListBox lsb && lsb.SelectedItem == null)
         {
-            Controller.Reset(plot);
+            Controller.Reset(graph);
             txbSummary.Text = "";
         }
     }
@@ -69,7 +69,7 @@ public partial class MainWindow : Window
 
     private void ApplyPeakDetector_Click(object sender, RoutedEventArgs e)
     {
-        txbSummary.Text = Controller.AnalyzeAndDraw((Vdl)lsbVdls.SelectedItem, plot);
+        txbSummary.Text = Controller.AnalyzeAndDraw((Vdl)lsbVdls.SelectedItem, graph);
     }
 
     private void PeakDetectorDataSource_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -81,12 +81,12 @@ public partial class MainWindow : Window
 
         if (Controller.State == ControllerState.DataDisplayed)
         {
-            Controller.Display((Vdl)lsbVdls.SelectedItem, plot);
+            Controller.Display((Vdl)lsbVdls.SelectedItem, graph);
             txbSummary.Text = "";
         }
         else if (Controller.State == ControllerState.DataProcessed)
         {
-            txbSummary.Text = Controller.AnalyzeAndDraw((Vdl)lsbVdls.SelectedItem, plot);
+            txbSummary.Text = Controller.AnalyzeAndDraw((Vdl)lsbVdls.SelectedItem, graph);
         }
     }
 
@@ -94,7 +94,7 @@ public partial class MainWindow : Window
     {
         if (Controller.State == ControllerState.DataProcessed)
         {
-            txbSummary.Text = Controller.AnalyzeAndDraw((Vdl)lsbVdls.SelectedItem, plot);
+            txbSummary.Text = Controller.AnalyzeAndDraw((Vdl)lsbVdls.SelectedItem, graph);
         }
     }
 
@@ -102,12 +102,12 @@ public partial class MainWindow : Window
     {
         if (Controller.State == ControllerState.DataDisplayed)
         {
-            Controller.Display((Vdl)lsbVdls.SelectedItem, plot);
+            Controller.Display((Vdl)lsbVdls.SelectedItem, graph);
             txbSummary.Text = "";
         }
         else if (Controller.State == ControllerState.DataProcessed)
         {
-            txbSummary.Text = Controller.AnalyzeAndDraw((Vdl)lsbVdls.SelectedItem, plot);
+            txbSummary.Text = Controller.AnalyzeAndDraw((Vdl)lsbVdls.SelectedItem, graph);
         }
     }
 }

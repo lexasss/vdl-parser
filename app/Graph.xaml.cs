@@ -1,12 +1,28 @@
 ﻿using ScottPlot;
-using ScottPlot.Styles;
+using System.ComponentModel;
 using System.Windows.Controls;
 
 namespace VdlParser;
 
-public partial class Graph : UserControl
+public partial class Graph : UserControl, INotifyPropertyChanged
 {
     public Plot Plot => chart.Plot;
+
+    public bool IsLegendVisible
+    {
+        get => _isLegendVisible;
+        set
+        {
+            _isLegendVisible = value;
+
+            chart.Plot.Legend(_isLegendVisible);
+            chart.Render();
+
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsLegendVisible)));
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
 
     public Graph()
     {
@@ -36,7 +52,7 @@ public partial class Graph : UserControl
     public void Render()
     {
         chart.Plot.AxisAuto();
-        chart.Plot.Legend(true);
+        chart.Plot.Legend(_isLegendVisible);
         chart.Render();
     }
 
@@ -47,4 +63,8 @@ public partial class Graph : UserControl
 
         chart.Plot.AddScatter(x.ToArray(), y.ToArray(), color, lineWidth: 2, markerShape: MarkerShape.none, label: label);
     }
+
+    // Internal
+
+    bool _isLegendVisible = false;
 }

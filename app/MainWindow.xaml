@@ -139,7 +139,7 @@
                 <RowDefinition Height="1*"/>
             </Grid.RowDefinitions>
             
-            <local:Graph x:Name="plot"
+            <local:Graph x:Name="graph"
                          Grid.Row="0"/>
             <StackPanel Grid.Row="1">
                 <StackPanel Orientation="Horizontal"
@@ -190,6 +190,10 @@
                                   Width="80"
                                   SelectionChanged="BlinkShape_SelectionChanged"/>
                     </WrapPanel>
+                    <Separator/>
+                    <CheckBox Content="Legend"
+                              VerticalAlignment="Center"
+                              IsChecked="{Binding IsLegendVisible, ElementName=graph, Mode=TwoWay}"/>
                 </StackPanel>
             </StackPanel>
             <TextBox x:Name="txbSummary" Grid.Row="2"
