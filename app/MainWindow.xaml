@@ -320,11 +320,11 @@
                         <TextBox Grid.Row="2" Grid.Column="1"
                                  Text="{Binding BlinkMaxDuration, Mode=TwoWay}"/>
                         <Label Grid.Row="3" Grid.Column="0"
-                               Content="Min gaze-lost interval (ms)"/>
+                               Content="Min gaze-lost duration (ms)"/>
                         <TextBox Grid.Row="3" Grid.Column="1"
                                  Text="{Binding MinGazeLostInterval, Mode=TwoWay}"/>
                         <Label Grid.Row="4" Grid.Column="0"
-                               Content="Merge interval (ms)"/>
+                               Content="Max interval to collapse (ms)"/>
                         <TextBox Grid.Row="4" Grid.Column="1"
                                  Text="{Binding MergeInterval, Mode=TwoWay}"/>
                     </Grid>
