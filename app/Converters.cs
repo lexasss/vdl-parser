@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using System.Windows;
 using System.Windows.Data;
 
 namespace VdlParser;
@@ -11,6 +12,21 @@ public class ObjectToBoolConverter : IValueConverter
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => value != null;
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => (bool)value;
+}
+
+[ValueConversion(typeof(bool), typeof(Visibility))]
+public class BoolToVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        var isInversed = (bool?)parameter == true;
+        return (bool)value ?
+            (isInversed ? Visibility.Collapsed : Visibility.Visible) :
+            (isInversed ? Visibility.Visible : Visibility.Collapsed);
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => 
+        (Visibility)value == Visibility.Visible;
 }
 
 [ValueConversion(typeof(bool), typeof(bool))]

@@ -1,11 +1,15 @@
-﻿using System.Windows;
+﻿using System.ComponentModel;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace VdlParser;
 
-public partial class MainWindow : Window
+public partial class MainWindow : Window, INotifyPropertyChanged
 {
     public Controller Controller { get; } = new Controller();
+    public bool IsSettingsPanelVisible { get; set; } = true;
+
+    public event PropertyChangedEventHandler? PropertyChanged;
 
     public MainWindow()
     {
@@ -67,7 +71,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ApplyPeakDetector_Click(object sender, RoutedEventArgs e)
+    private void Analyze_Click(object sender, RoutedEventArgs e)
     {
         txbSummary.Text = Controller.AnalyzeAndDraw((Vdl)lsbVdls.SelectedItem, graph);
     }
@@ -109,5 +113,12 @@ public partial class MainWindow : Window
         {
             txbSummary.Text = Controller.AnalyzeAndDraw((Vdl)lsbVdls.SelectedItem, graph);
         }
+    }
+
+    private void SettingShowHide_Click(object sender, RoutedEventArgs e)
+    {
+        IsSettingsPanelVisible = !IsSettingsPanelVisible;
+        ((Button)sender).Content = IsSettingsPanelVisible ? "🠾" : "🠼";
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSettingsPanelVisible)));
     }
 }
