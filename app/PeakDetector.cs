@@ -112,7 +112,8 @@ public class PeakDetector : INotifyPropertyChanged
         {
             var firstValidDatapointIndex = i;
 
-            while (firstValidDatapointIndex < samples.Length && IsBelowThreshold(samples[firstValidDatapointIndex].Value, ignoranceThreshold))
+            while (firstValidDatapointIndex < samples.Length &&
+                IsBelowThreshold(samples[firstValidDatapointIndex].Value, ignoranceThreshold))
             {
                 firstValidDatapointIndex += 1;
             }
@@ -142,9 +143,12 @@ public class PeakDetector : INotifyPropertyChanged
             var difference = avg2 - avg1;
 
             var timestampCurrent = chunk[_bufferSize / 2].Timestamp;
-            var timeElapsedSinceTheLastPeak = timestampLastPeakEnd > 0 ? (timestampCurrent - timestampLastPeakEnd) : long.MaxValue;
+            var timeElapsedSinceTheLastPeak = timestampLastPeakEnd > 0
+                ? (timestampCurrent - timestampLastPeakEnd)
+                : long.MaxValue;
 
-            if (!isInPeak && IsAboveThreshold(difference, PeakThreshold) && timeElapsedSinceTheLastPeak > MinInterPeakInterval)
+            if (!isInPeak && IsAboveThreshold(difference, PeakThreshold) &&
+                timeElapsedSinceTheLastPeak > MinInterPeakInterval)
             {
                 isInPeak = true;
 

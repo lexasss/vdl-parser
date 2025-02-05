@@ -151,7 +151,7 @@
             <StackPanel Grid.Row="1"
                         Orientation="Horizontal">
                 <StackPanel Orientation="Horizontal"
-                            DataContext="{Binding Path=Controller.Settings}"
+                            DataContext="{Binding Path=Settings}"
                             HorizontalAlignment="Center"
                             Margin="0,8">
                     <StackPanel.Resources>

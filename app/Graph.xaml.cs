@@ -61,7 +61,8 @@ public partial class Graph : UserControl, INotifyPropertyChanged
         var x = samples.Select(s => (double)s.Timestamp);
         var y = samples.Select(s => s.Value);
 
-        chart.Plot.AddScatter(x.ToArray(), y.ToArray(), color, lineWidth: 2, markerShape: MarkerShape.none, label: label);
+        chart.Plot.AddScatter(x.ToArray(), y.ToArray(), color,
+            lineWidth: 2, markerShape: MarkerShape.none, label: label);
     }
 
     // Internal

@@ -7,6 +7,7 @@ namespace VdlParser;
 public partial class MainWindow : Window, INotifyPropertyChanged
 {
     public Controller Controller { get; } = new Controller();
+    public Settings Settings { get; } = Settings.Instance;
     public bool IsSettingsPanelVisible { get; set; } = true;
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -20,30 +21,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     // Internal
 
+    GraphRenderer? _graphRenderer = null;
+    Processor? _processor = null;
 
     // UI events
 
     private void Window_Closed(object sender, EventArgs e)
     {
         Controller.Dispose();
-    }
-
-    private void VdlsListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (e.AddedItems.Count > 0)
-        {
-            var vdl = e.AddedItems[0] as Vdl;
-            if (vdl != null)
-            {
-                Controller.Display(vdl, graph);
-                txbSummary.Text = "";
-            }
-        }
-        else if (sender is ListBox lsb && lsb.SelectedItem == null)
-        {
-            Controller.Reset(graph);
-            txbSummary.Text = "";
-        }
     }
 
     private void OpenButton_Click(object sender, RoutedEventArgs e)
@@ -65,53 +50,95 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 }
                 else
                 {
-                    MessageBox.Show($"Cannot load or parse the file '{filename}'.", Title, MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show($"Cannot load or parse the file '{filename}'.",
+                        Title, MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
         }
     }
 
+    private void VdlsListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (e.AddedItems.Count > 0)
+        {
+            var vdl = e.AddedItems[0] as Vdl;
+            if (vdl != null)
+            {
+                _processor = new Processor(vdl.Records, Controller);
+                _graphRenderer = new GraphRenderer(graph);
+                _graphRenderer.DisplayRawData(_processor.HandSamples, _processor.GazeSamples);
+                txbSummary.Text = "";
+            }
+        }
+        else if (sender is ListBox lsb && lsb.SelectedItem == null)
+        {
+            _graphRenderer?.Reset();
+            _graphRenderer = null;
+            txbSummary.Text = "";
+        }
+    }
+
     private void Analyze_Click(object sender, RoutedEventArgs e)
     {
-        txbSummary.Text = Controller.AnalyzeAndDraw((Vdl)lsbVdls.SelectedItem, graph);
+        if (_processor == null)
+            return;
+
+        _graphRenderer?.DisplayProcessedData(_processor);
+        txbSummary.Text = new Statistics(_processor).GetAsText();
     }
 
     private void PeakDetectorDataSource_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
+        if (_processor == null)
+            return;
+
+        _processor = new Processor(_processor.Records, Controller);
+
         if (IsLoaded && ((ComboBox)sender).SelectedItem is GazeDataSource)
         {
             Controller.GazePeakDetector.ReversePeakSearchDirection();
         }
 
-        if (Controller.State == ControllerState.DataDisplayed)
+        if (_graphRenderer?.Content == GraphContent.RawData)
         {
-            Controller.Display((Vdl)lsbVdls.SelectedItem, graph);
+            _graphRenderer.DisplayRawData(_processor.HandSamples, _processor.GazeSamples);
             txbSummary.Text = "";
         }
-        else if (Controller.State == ControllerState.DataProcessed)
+        else if (_graphRenderer?.Content == GraphContent.Processed)
         {
-            txbSummary.Text = Controller.AnalyzeAndDraw((Vdl)lsbVdls.SelectedItem, graph);
+            _graphRenderer.DisplayProcessedData(_processor);
+            txbSummary.Text = new Statistics(_processor).GetAsText();
         }
     }
 
     private void BlinkShape_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (Controller.State == ControllerState.DataProcessed)
+        if (_processor == null)
+            return;
+
+        if (_graphRenderer?.Content == GraphContent.Processed)
         {
-            txbSummary.Text = Controller.AnalyzeAndDraw((Vdl)lsbVdls.SelectedItem, graph);
+            _graphRenderer.DisplayProcessedData(_processor);
+            txbSummary.Text = new Statistics(_processor).GetAsText();
         }
     }
 
     private void TimestampSource_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (Controller.State == ControllerState.DataDisplayed)
+        if (_processor == null)
+            return;
+
+        _processor = new Processor(_processor.Records, Controller);
+
+        if (_graphRenderer?.Content == GraphContent.RawData)
         {
-            Controller.Display((Vdl)lsbVdls.SelectedItem, graph);
+            _graphRenderer.DisplayRawData(_processor.HandSamples, _processor.GazeSamples);
             txbSummary.Text = "";
         }
-        else if (Controller.State == ControllerState.DataProcessed)
+        else if (_graphRenderer?.Content == GraphContent.Processed)
         {
-            txbSummary.Text = Controller.AnalyzeAndDraw((Vdl)lsbVdls.SelectedItem, graph);
+            _graphRenderer.DisplayProcessedData(_processor);
+            txbSummary.Text = new Statistics(_processor).GetAsText();
         }
     }
 

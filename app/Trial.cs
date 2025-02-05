@@ -9,9 +9,11 @@ public class Trial(Peak handPeak, Peak gazePeak, long timestampStart, long times
     public long TimestampResponse => timestampResponse;
     public long GazeHandInterval => GazePeak.TimestampStart - HandPeak.TimestampStart;
 
-    public static Trial[] GetTrials(Record[] records, Peak[] handPeaks, Peak[] gazePeaks, long maxHandGazeDelay, TimestampSource timestampSource)
+    public static Trial[] GetTrials(Record[] records, Peak[] handPeaks, Peak[] gazePeaks)
     {
         var result = new List<Trial>();
+
+        Settings settings = Settings.Instance;
 
         int recordIndex = 0;
         int gazeIndex = 0;
@@ -25,11 +27,11 @@ public class Trial(Peak handPeak, Peak gazePeak, long timestampStart, long times
                 var record = records[recordIndex++];
                 if (record.NBackTaskEvent?.Type == NBackTaskEventType.TrialStart)
                 {
-                    timestampStart = GetTimestamp(record, timestampSource);
+                    timestampStart = GetTimestamp(record, settings.TimestampSource);
                 }
                 else if (record.NBackTaskEvent?.Type == NBackTaskEventType.TrialResponse)
                 {
-                    timestampResponse = GetTimestamp(record, timestampSource);
+                    timestampResponse = GetTimestamp(record, settings.TimestampSource);
                     break;
                 }
             }
@@ -37,7 +39,7 @@ public class Trial(Peak handPeak, Peak gazePeak, long timestampStart, long times
             while (gazeIndex < gazePeaks.Length)
             {
                 var gazePeak = gazePeaks[gazeIndex++];
-                if (Math.Abs(gazePeak.TimestampStart - handPeak.TimestampStart) < maxHandGazeDelay)
+                if (Math.Abs(gazePeak.TimestampStart - handPeak.TimestampStart) < settings.MaxHandGazeDelay)
                 {
                     result.Add(new Trial(handPeak, gazePeak, timestampStart, timestampResponse));
                     break;

@@ -2,7 +2,7 @@
 
 namespace VdlParser;
 
-public record class GazeDataMiss(long TimestampStart, long TimestampEnd, long Duration, bool IsBlink);
+public record class GazeDataMiss(long TimestampStart, long TimestampEnd, long Duration, bool IsBlink, bool IsLong);
 
 public class BlinkDetector
 {
@@ -63,12 +63,14 @@ public class BlinkDetector
                         var missToBeReplaced = misses[^1];
                         interval = sample.Timestamp - missToBeReplaced.TimestampStart;
                         misses[^1] = new GazeDataMiss(missToBeReplaced.TimestampStart, sample.Timestamp, interval,
-                            interval >= BlinkMinDuration && interval <= BlinkMaxDuration);
+                            interval >= BlinkMinDuration && interval <= BlinkMaxDuration,
+                            interval > BlinkMaxDuration);
                     }
                     else
                     {
                         misses.Add(new GazeDataMiss(lastTimestamp, sample.Timestamp, interval,
-                            interval >= BlinkMinDuration && interval <= BlinkMaxDuration));
+                            interval >= BlinkMinDuration && interval <= BlinkMaxDuration,
+                            interval > BlinkMaxDuration));
                     }
                     lastBlinkEndTimestamp = sample.Timestamp;
                 }
