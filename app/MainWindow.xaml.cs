@@ -6,7 +6,8 @@ namespace VdlParser;
 
 public partial class MainWindow : Window, INotifyPropertyChanged
 {
-    public Controller Controller { get; } = new Controller();
+    public Vdls Vdls { get; } = new Vdls();
+    public Processor Processor { get; } = new Processor();
     public Settings Settings { get; } = Settings.Instance;
     public bool IsSettingsPanelVisible { get; set; } = true;
 
@@ -17,18 +18,38 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         InitializeComponent();
 
         DataContext = this;
+
+        _graphRenderer = new GraphRenderer(graph);
     }
 
     // Internal
 
-    GraphRenderer? _graphRenderer = null;
-    Processor? _processor = null;
+    GraphRenderer _graphRenderer;
+
+    private void RefeedProcessor()
+    {
+        if (Vdls.SelectedItem == null)
+            return;
+
+        Processor.Feed(Vdls.SelectedItem.Records);
+
+        if (_graphRenderer.Content == GraphContent.RawData)
+        {
+            _graphRenderer.DisplayRawData(Processor.HandSamples, Processor.GazeSamples);
+            txbSummary.Text = "";
+        }
+        else if (_graphRenderer.Content == GraphContent.Processed)
+        {
+            _graphRenderer.DisplayProcessedData(Processor);
+            txbSummary.Text = new Statistics(Processor).GetAsText();
+        }
+    }
 
     // UI events
 
     private void Window_Closed(object sender, EventArgs e)
     {
-        Controller.Dispose();
+        Processor.Dispose();
     }
 
     private void OpenButton_Click(object sender, RoutedEventArgs e)
@@ -46,7 +67,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 var vdl = Vdl.Load(filename);
                 if (vdl != null)
                 {
-                    Controller.Add(vdl);
+                    Vdls.Add(vdl);
                 }
                 else
                 {
@@ -64,82 +85,46 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             var vdl = e.AddedItems[0] as Vdl;
             if (vdl != null)
             {
-                _processor = new Processor(vdl.Records, Controller);
-                _graphRenderer = new GraphRenderer(graph);
-                _graphRenderer.DisplayRawData(_processor.HandSamples, _processor.GazeSamples);
+                Processor.Feed(vdl.Records);
+                _graphRenderer.DisplayRawData(Processor.HandSamples, Processor.GazeSamples);
                 txbSummary.Text = "";
             }
         }
         else if (sender is ListBox lsb && lsb.SelectedItem == null)
         {
-            _graphRenderer?.Reset();
-            _graphRenderer = null;
+            _graphRenderer.Reset();
             txbSummary.Text = "";
         }
     }
 
     private void Analyze_Click(object sender, RoutedEventArgs e)
     {
-        if (_processor == null)
-            return;
-
-        _graphRenderer?.DisplayProcessedData(_processor);
-        txbSummary.Text = new Statistics(_processor).GetAsText();
+        _graphRenderer.DisplayProcessedData(Processor);
+        txbSummary.Text = new Statistics(Processor).GetAsText();
     }
 
     private void PeakDetectorDataSource_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_processor == null)
-            return;
-
-        _processor = new Processor(_processor.Records, Controller);
-
         if (IsLoaded && ((ComboBox)sender).SelectedItem is GazeDataSource)
         {
-            Controller.GazePeakDetector.ReversePeakSearchDirection();
+            Processor.GazePeakDetector.ReversePeakSearchDirection();
         }
 
-        if (_graphRenderer?.Content == GraphContent.RawData)
-        {
-            _graphRenderer.DisplayRawData(_processor.HandSamples, _processor.GazeSamples);
-            txbSummary.Text = "";
-        }
-        else if (_graphRenderer?.Content == GraphContent.Processed)
-        {
-            _graphRenderer.DisplayProcessedData(_processor);
-            txbSummary.Text = new Statistics(_processor).GetAsText();
-        }
+        RefeedProcessor();
     }
 
     private void BlinkShape_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_processor == null)
-            return;
-
-        if (_graphRenderer?.Content == GraphContent.Processed)
+        if (_graphRenderer.Content == GraphContent.Processed)
         {
-            _graphRenderer.DisplayProcessedData(_processor);
-            txbSummary.Text = new Statistics(_processor).GetAsText();
+            _graphRenderer.DisplayProcessedData(Processor);
+            txbSummary.Text = new Statistics(Processor).GetAsText();
         }
     }
 
     private void TimestampSource_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_processor == null)
-            return;
-
-        _processor = new Processor(_processor.Records, Controller);
-
-        if (_graphRenderer?.Content == GraphContent.RawData)
-        {
-            _graphRenderer.DisplayRawData(_processor.HandSamples, _processor.GazeSamples);
-            txbSummary.Text = "";
-        }
-        else if (_graphRenderer?.Content == GraphContent.Processed)
-        {
-            _graphRenderer.DisplayProcessedData(_processor);
-            txbSummary.Text = new Statistics(_processor).GetAsText();
-        }
+        RefeedProcessor();
     }
 
     private void SettingShowHide_Click(object sender, RoutedEventArgs e)
@@ -147,5 +132,15 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         IsSettingsPanelVisible = !IsSettingsPanelVisible;
         ((Button)sender).Content = IsSettingsPanelVisible ? "🠾" : "🠼";
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSettingsPanelVisible)));
+    }
+
+    private void Vdls_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == System.Windows.Input.Key.Delete && Vdls.SelectedItem != null)
+        {
+            Vdls.Remove(Vdls.SelectedItem);
+            _graphRenderer.Reset();
+            txbSummary.Text = "";
+        }
     }
 }

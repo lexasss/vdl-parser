@@ -24,7 +24,10 @@ public class GraphRenderer(Graph graph)
         _graph.AddCurve(gazeSamples, COLOR_GAZE, "Gaze");
         _graph.Render();
 
-        Content = GraphContent.RawData;
+        if (Content != GraphContent.Processed)
+        {
+            Content = GraphContent.RawData;
+        }
     }
 
     public void DisplayProcessedData(Processor processor)

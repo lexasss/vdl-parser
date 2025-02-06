@@ -18,31 +18,40 @@ public enum GazeDataSource
 
 public record class TimestampedNbtEvent(long Timestamp, NBackTaskEvent Event);
 
-public class Processor
+public class Processor : IDisposable
 {
-    public Record[] Records { get; }
+    public PeakDetector HandPeakDetector { get; } = PeakDetector.Load(DataSourceType.Hand);
+    public PeakDetector GazePeakDetector { get; } = PeakDetector.Load(DataSourceType.Gaze);
+    public BlinkDetector BlinkDetector { get; } = BlinkDetector.Load();
 
-    public Sample[] HandSamples { get; }
-    public Sample[] GazeSamples { get; }
-    public Peak[] HandPeaks { get; }
-    public Peak[] GazePeaks { get; }
-    public Trial[] Trials { get; }
-    public GazeDataMiss[] GazeDataMisses { get; }
-    public double[] PupilSizes { get; }
-    public TimestampedNbtEvent[] NBackTaskEvents { get; }
+    public Sample[] HandSamples { get; private set; } = [];
+    public Sample[] GazeSamples { get; private set; } = [];
+    public Peak[] HandPeaks { get; private set; } = [];
+    public Peak[] GazePeaks { get; private set; } = [];
+    public Trial[] Trials { get; private set; } = [];
+    public GazeDataMiss[] GazeDataMisses { get; private set; } = [];
+    public double[] PupilSizes { get; private set; } = [];
+    public TimestampedNbtEvent[] NBackTaskEvents { get; private set; } = [];
 
-    public Processor(Record[] records, Controller controller)
+    public void Dispose()
     {
-        Records = records;
+        PeakDetector.Save(DataSourceType.Hand, HandPeakDetector);
+        PeakDetector.Save(DataSourceType.Gaze, GazePeakDetector);
+        BlinkDetector.Save(BlinkDetector);
 
+        GC.SuppressFinalize(this);
+    }
+
+    public void Feed(Record[] records)
+    {
         (HandSamples, GazeSamples) = GetHandGazeSamples(records);
 
-        HandPeaks = controller.HandPeakDetector.Find(HandSamples);
-        GazePeaks = controller.GazePeakDetector.Find(GazeSamples);
+        HandPeaks = HandPeakDetector.Find(HandSamples);
+        GazePeaks = GazePeakDetector.Find(GazeSamples);
 
         Trials = Trial.GetTrials(records, HandPeaks, GazePeaks);
 
-        GazeDataMisses = controller.BlinkDetector.Find(GazeSamples);
+        GazeDataMisses = BlinkDetector.Find(GazeSamples);
 
         PupilSizes = GetPupilSizes(records);
 

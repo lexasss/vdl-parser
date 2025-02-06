@@ -122,9 +122,11 @@
             </Grid.RowDefinitions>
 
             <ListBox x:Name="lsbVdls" Grid.Row="0"
-                     DataContext="{Binding Controller}"
-                     ItemsSource="{Binding Vdls}"
-                     ItemContainerStyle="{StaticResource VdlListContainer}" SelectionChanged="VdlsListBox_SelectionChanged"/>
+                     DataContext="{Binding Vdls}"
+                     ItemsSource="{Binding Items}"
+                     SelectedItem="{Binding SelectedItem, Mode=OneWayToSource}"
+                     ItemContainerStyle="{StaticResource VdlListContainer}" SelectionChanged="VdlsListBox_SelectionChanged"
+                     KeyUp="Vdls_KeyUp"/>
 
             <Button Grid.Row="1"
                 Content="Load..."
@@ -244,7 +246,7 @@
                     </Grid.RowDefinitions>
 
                     <StackPanel Grid.Row="0">
-                        <Grid DataContext="{Binding Path=Controller.HandPeakDetector, Mode=OneTime}">
+                        <Grid DataContext="{Binding Path=Processor.HandPeakDetector, Mode=OneTime}">
                             <Grid.RowDefinitions>
                                 <RowDefinition/>
                                 <RowDefinition/>
@@ -286,7 +288,7 @@
 
                         <Separator Margin="2,12"/>
 
-                        <Grid DataContext="{Binding Path=Controller.GazePeakDetector, Mode=OneTime}">
+                        <Grid DataContext="{Binding Path=Processor.GazePeakDetector, Mode=OneTime}">
                             <Grid.RowDefinitions>
                                 <RowDefinition/>
                                 <RowDefinition/>
@@ -328,7 +330,7 @@
 
                         <Separator Margin="2,12"/>
 
-                        <Grid DataContext="{Binding Path=Controller.BlinkDetector, Mode=OneTime}">
+                        <Grid DataContext="{Binding Path=Processor.BlinkDetector, Mode=OneTime}">
                             <Grid.RowDefinitions>
                                 <RowDefinition/>
                                 <RowDefinition/>
@@ -364,7 +366,7 @@
                     </StackPanel>
 
                     <Button Grid.Row="1"
-                            DataContext="{Binding Controller}"
+                            DataContext="{Binding Vdls}"
                             IsEnabled="{Binding SelectedItem, ElementName=lsbVdls, Converter={StaticResource obj2bool}}"
                             Content="Analyze"
                             Click="Analyze_Click"/>
