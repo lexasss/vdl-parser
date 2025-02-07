@@ -16,6 +16,16 @@ public class ObjectToBoolConverter : IValueConverter
         (bool)value;
 }
 
+[ValueConversion(typeof(string), typeof(bool))]
+public class StringToBoolConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        !string.IsNullOrEmpty((string)value);
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        "";
+}
+
 [ValueConversion(typeof(bool), typeof(Visibility))]
 public class BoolToVisibilityConverter : IValueConverter
 {

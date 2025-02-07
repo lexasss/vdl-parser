@@ -1,6 +1,8 @@
 ﻿using System.ComponentModel;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace VdlParser;
 
@@ -36,12 +38,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (_graphRenderer.Content == GraphContent.RawData)
         {
             _graphRenderer.DisplayRawData(Processor.HandSamples, Processor.GazeSamples);
-            txbSummary.Text = "";
+            txbSummary.Text = null;
         }
         else if (_graphRenderer.Content == GraphContent.Processed)
         {
             _graphRenderer.DisplayProcessedData(Processor);
-            txbSummary.Text = new Statistics(Processor).GetAsText();
+            txbSummary.Text = new Statistics(Processor).Get(StatisticsFormat.List);
         }
     }
 
@@ -56,20 +58,50 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         var ofd = new Microsoft.Win32.OpenFileDialog()
         {
-            Filter = "VDL files|vdl-*.txt",
+            Filter = "VDL files|vdl-*.txt;New CTT files|ctt-*.txt;Old CTT files|CTT*.csv;NBack-Task files|n-back-task-*.txt",
             Multiselect = true,
         };
 
         if (ofd.ShowDialog() == true)
         {
+            var statistics = List<string>();
+
             foreach (var filename in ofd.FileNames)
             {
-                var vdl = Vdl.Load(filename);
-                if (vdl != null)
+                bool wasParsed = false;
+                if (filename.StartsWith("vdl-"))
                 {
-                    Vdls.Add(vdl);
+                    var vdl = Vdl.Load(filename);
+                    if (vdl != null)
+                    {
+                        Vdls.Add(vdl);
+                        wasParsed = true;
+                    }
                 }
                 else
+                {
+                    var fn = Path.GetFileName(filename);
+                    if (fn.StartsWith("ctt-"))
+                    {
+                        var ctt = CttNew.Load(filename);
+                        wasParsed = ctt != null;
+                        statistics.Add($"{filename}\n{ctt ?? "skipped"}");
+                    }
+                    else if (fn.EndsWith(".csv"))
+                    {
+                        var ctt = CttOld.Load(filename);
+                        wasParsed = ctt != null;
+                        statistics.Add($"{filename}\n{ctt ?? "skipped"}");
+                    }
+                    else if (fn.StartsWith("n-back-task-"))
+                    {
+                        var nbt = Nbt.Load(filename);
+                        wasParsed = nbt != null;
+                        statistics.Add($"{filename}\n{nbt ?? "skipped"}");
+                    }
+                }
+
+                if (!wasParsed)
                 {
                     MessageBox.Show($"Cannot load or parse the file '{filename}'.",
                         Title, MessageBoxButton.OK, MessageBoxImage.Error);
@@ -87,20 +119,24 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             {
                 Processor.Feed(vdl.Records);
                 _graphRenderer.DisplayRawData(Processor.HandSamples, Processor.GazeSamples);
-                txbSummary.Text = "";
+                txbSummary.Text = null;
             }
         }
         else if (sender is ListBox lsb && lsb.SelectedItem == null)
         {
             _graphRenderer.Reset();
-            txbSummary.Text = "";
+            txbSummary.Text = null;
         }
     }
 
     private void Analyze_Click(object sender, RoutedEventArgs e)
     {
+        if (Vdls.SelectedItem == null)
+            return;
+
+        Processor.Feed(Vdls.SelectedItem.Records);
         _graphRenderer.DisplayProcessedData(Processor);
-        txbSummary.Text = new Statistics(Processor).GetAsText();
+        txbSummary.Text = new Statistics(Processor).Get(StatisticsFormat.List);
     }
 
     private void PeakDetectorDataSource_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -118,7 +154,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (_graphRenderer.Content == GraphContent.Processed)
         {
             _graphRenderer.DisplayProcessedData(Processor);
-            txbSummary.Text = new Statistics(Processor).GetAsText();
+            txbSummary.Text = new Statistics(Processor).Get(StatisticsFormat.List);
         }
     }
 
@@ -140,7 +176,27 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             Vdls.Remove(Vdls.SelectedItem);
             _graphRenderer.Reset();
-            txbSummary.Text = "";
+            txbSummary.Text = null;
+        }
+    }
+
+    private void CopyButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (!string.IsNullOrEmpty(txbSummary.Text))
+        {
+            var statistics = new Statistics(Processor).Get(
+                Keyboard.Modifiers == ModifierKeys.Shift ?
+                    StatisticsFormat.RowHeaders :
+                    StatisticsFormat.Rows);
+
+            Clipboard.SetText(statistics);
+
+            lblCopied.Visibility = Visibility.Visible;
+            Task.Run(async () =>
+            {
+                await Task.Delay(2000);
+                Dispatcher.Invoke(() => lblCopied.Visibility = Visibility.Hidden);
+            });
         }
     }
 }

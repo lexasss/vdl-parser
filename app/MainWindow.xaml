@@ -14,11 +14,19 @@
 
     <Window.Resources>
         <local:ObjectToBoolConverter x:Key="obj2bool"/>
+        <local:StringToBoolConverter x:Key="str2bool"/>
         <local:BoolToVisibilityConverter x:Key="bool2vis"/>
         <sys:Boolean x:Key="true">True</sys:Boolean>
 
         <Style TargetType="Button">
             <Setter Property="Padding" Value="8"/>
+        </Style>
+        <Style x:Key="CopyButton" TargetType="Button">
+            <Setter Property="Width" Value="32"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="Padding" Value="2,0,0,0"/>
+            <Setter Property="Foreground" Value="Gray"/>
         </Style>
         <Style x:Key="VdlHeader" TargetType="Label">
             <Setter Property="FontWeight" Value="Bold"/>
@@ -33,6 +41,15 @@
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
         </Style>
+
+        <ControlTemplate x:Key="CopySign" TargetType="ContentControl">
+            <Grid>
+                <TextBlock Margin="-2,-2,0,0" Foreground="White">▮</TextBlock>
+                <TextBlock Margin="-2,-2,0,0">▯</TextBlock>
+                <TextBlock Margin="2,2,0,0" Foreground="White">▮</TextBlock>
+                <TextBlock Margin="2,2,0,0" >▯</TextBlock>
+            </Grid>
+        </ControlTemplate>
 
         <DataTemplate x:Key="VdlItem" DataType="local:Vdl">
             <Border BorderThickness="1"
@@ -215,8 +232,25 @@
                         Width="120"
                         Click="Analyze_Click"/>
             </StackPanel>
+
             <TextBox x:Name="txbSummary" Grid.Row="3"
                      VerticalScrollBarVisibility="Auto"/>
+            <Button Grid.Row="3"
+                    Style="{StaticResource CopyButton}"
+                    VerticalAlignment="Top"
+                    HorizontalAlignment="Right"
+                    Margin="24,8"
+                    ToolTip="Click to copy data in the Excel-friendly format.\n(Keep shift to copy row headers instead of values)"
+                    IsEnabled="{Binding Text, Converter={StaticResource str2bool}, ElementName=txbSummary}"
+                    Click="CopyButton_Click">
+                <ContentControl Template="{StaticResource CopySign}"/>
+            </Button>
+            <Label x:Name="lblCopied" Grid.Row="3"
+                   Margin="24,8"
+                   Content="Copied"
+                   Visibility="Hidden"
+                   VerticalAlignment="Bottom"
+                   HorizontalAlignment="Right"/>
         </Grid>
 
         <Border Grid.Column="2"

@@ -14,7 +14,7 @@ public enum NBackTaskEventType
 }
 public record class NBackTaskEvent(NBackTaskEventType Type);
 public record class NBackTaskTrial(NBackTaskEventType Type, int Id) : NBackTaskEvent(Type);
-public record class NBackTaskTrialResult(NBackTaskEventType Type, int Id, bool IsSuccess) : NBackTaskTrial(Type, Id);
+public record class NBackTaskTrialResult(NBackTaskEventType Type, int Id, bool IsCorrect) : NBackTaskTrial(Type, Id);
 
 public record class Record(
     long TimestampSystem,

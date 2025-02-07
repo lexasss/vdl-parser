@@ -56,14 +56,14 @@ public class GraphRenderer(Graph graph)
 
         foreach (var peak in processor.HandPeaks)
         {
-            bool isMatched = processor.Trials.Any(trial => peak == trial.HandPeak);
+            bool isMatched = processor.Trials.Any(trial => peak == trial.HandPeak && trial.HasHandGazeMatch);
             _graph.Plot.AddVerticalLine(peak.TimestampStart, COLOR_HAND, isMatched ? 1 : 2,
                 ScottPlot.LineStyle.Dot, label: EnsureSingle("Hand peak start"));
         }
 
         foreach (var peak in processor.GazePeaks)
         {
-            bool isMatched = processor.Trials.Any(trial => peak == trial.GazePeak);
+            bool isMatched = processor.Trials.Any(trial => peak == trial.GazePeak && trial.HasHandGazeMatch);
             _graph.Plot.AddVerticalLine(peak.TimestampStart, COLOR_GAZE, isMatched ? 1 : 2,
                 ScottPlot.LineStyle.Dot, label: EnsureSingle("Gaze peak start"));
         }
