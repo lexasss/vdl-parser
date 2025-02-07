@@ -11,7 +11,7 @@ public class Trial(Peak? handPeak, Peak? gazePeak, long startTimestamp, long res
     public long GazeHandInterval => HasHandGazeMatch ? GazePeak!.TimestampStart - HandPeak!.TimestampStart : 0;
     public bool IsCorrect => isCorrect;
 
-    public static Trial[] GetTrials(Record[] records, Peak[] handPeaks, Peak[] gazePeaks)
+    public static Trial[] GetTrials(VdlRecord[] records, Peak[] handPeaks, Peak[] gazePeaks)
     {
         var result = new List<Trial>();
 
@@ -47,55 +47,13 @@ public class Trial(Peak? handPeak, Peak? gazePeak, long startTimestamp, long res
                 }
             }
         }
-        /*
-        int recordIndex = 0;
-        int gazeIndex = 0;
-        foreach (Peak handPeak in handPeaks)
-        {
-            long timestampStart = 0;
-            long timestampResponse = 0;
-            bool isCorrect = false;
-
-            while (recordIndex < records.Length)
-            {
-                var record = records[recordIndex++];
-                if (record.NBackTaskEvent?.Type == NBackTaskEventType.TrialStart)
-                {
-                    timestampStart = GetTimestamp(record, settings.TimestampSource);
-                }
-                else if (record.NBackTaskEvent?.Type == NBackTaskEventType.TrialResponse)
-                {
-                    timestampResponse = GetTimestamp(record, settings.TimestampSource);
-                }
-                else if (record.NBackTaskEvent?.Type == NBackTaskEventType.TrialEnd)
-                {
-                    isCorrect = ((NBackTaskTrialResult)record.NBackTaskEvent).IsCorrect;
-                    break;
-                }
-            }
-
-            while (gazeIndex < gazePeaks.Length)
-            {
-                var gazePeak = gazePeaks[gazeIndex++];
-                if (Math.Abs(gazePeak.TimestampStart - handPeak.TimestampStart) < settings.MaxHandGazeDelay)
-                {
-                    result.Add(new Trial(handPeak, gazePeak, timestampStart, timestampResponse, isCorrect));
-                    break;
-                }
-                else if (gazePeak.TimestampStart > handPeak.TimestampStart)
-                {
-                    gazeIndex -= 1;
-                    break;
-                }
-            }
-        }*/
 
         return result.ToArray();
     }
 
     // Interval
 
-    private static long GetTimestamp(Record record, TimestampSource source) => source switch
+    private static long GetTimestamp(VdlRecord record, TimestampSource source) => source switch
     {
         TimestampSource.Headset => record.TimestampHeadset,
         TimestampSource.System => record.TimestampSystem,

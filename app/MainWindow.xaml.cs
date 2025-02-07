@@ -43,7 +43,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         else if (_graphRenderer.Content == GraphContent.Processed)
         {
             _graphRenderer.DisplayProcessedData(Processor);
-            txbSummary.Text = new Statistics(Processor).Get(StatisticsFormat.List);
+            txbSummary.Text = new VdlStatistics(Processor).Get(StatisticsFormat.List);
         }
     }
 
@@ -58,18 +58,20 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         var ofd = new Microsoft.Win32.OpenFileDialog()
         {
-            Filter = "VDL files|vdl-*.txt;New CTT files|ctt-*.txt;Old CTT files|CTT*.csv;NBack-Task files|n-back-task-*.txt",
+            Filter = "All log files|vdl-*.txt;ctt-*.txt;CTT*.csv;n-back-task-*.txt|VDL files|vdl-*.txt|CTT files|ctt-*.txt;CTT*.csv|NBack-Task files|n-back-task-*.txt",
             Multiselect = true,
         };
 
         if (ofd.ShowDialog() == true)
         {
-            var statistics = List<string>();
+            var statistics = new List<string>();
 
             foreach (var filename in ofd.FileNames)
             {
                 bool wasParsed = false;
-                if (filename.StartsWith("vdl-"))
+                var fn = Path.GetFileName(filename);
+
+                if (fn.StartsWith("vdl-"))
                 {
                     var vdl = Vdl.Load(filename);
                     if (vdl != null)
@@ -80,26 +82,48 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 }
                 else
                 {
-                    var fn = Path.GetFileName(filename);
                     if (fn.StartsWith("ctt-"))
                     {
                         var ctt = CttNew.Load(filename);
                         wasParsed = ctt != null;
-                        statistics.Add($"{filename}\n{ctt ?? "skipped"}");
+                        if (ctt != null)
+                            statistics.Add(string.Join('\n',
+                                fn,
+                                ctt.ParticipantID,
+                                ctt.Condition,
+                                ctt.Lambda,
+                                ctt.ToString()
+                            ));
                     }
                     else if (fn.EndsWith(".csv"))
                     {
                         var ctt = CttOld.Load(filename);
                         wasParsed = ctt != null;
-                        statistics.Add($"{filename}\n{ctt ?? "skipped"}");
+                        if (ctt != null)
+                            statistics.Add(string.Join('\n',
+                                fn,
+                                ctt.ParticipantID,
+                                ctt.Condition,
+                                ctt.Lambda,
+                                ctt.ToString()
+                            ));
                     }
                     else if (fn.StartsWith("n-back-task-"))
                     {
                         var nbt = Nbt.Load(filename);
                         wasParsed = nbt != null;
-                        statistics.Add($"{filename}\n{nbt ?? "skipped"}");
+                        if (nbt != null)
+                            statistics.Add(string.Join('\n',
+                                fn,
+                                nbt.ParticipantID,
+                                nbt.Condition,
+                                nbt.Lambda,
+                                nbt.ToString()
+                            ));
                     }
                 }
+
+                txbSummary.Text = string.Join("\n\n", statistics);
 
                 if (!wasParsed)
                 {
@@ -136,7 +160,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         Processor.Feed(Vdls.SelectedItem.Records);
         _graphRenderer.DisplayProcessedData(Processor);
-        txbSummary.Text = new Statistics(Processor).Get(StatisticsFormat.List);
+        txbSummary.Text = new VdlStatistics(Processor).Get(StatisticsFormat.List);
     }
 
     private void PeakDetectorDataSource_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -154,7 +178,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (_graphRenderer.Content == GraphContent.Processed)
         {
             _graphRenderer.DisplayProcessedData(Processor);
-            txbSummary.Text = new Statistics(Processor).Get(StatisticsFormat.List);
+            txbSummary.Text = new VdlStatistics(Processor).Get(StatisticsFormat.List);
         }
     }
 
@@ -184,7 +208,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         if (!string.IsNullOrEmpty(txbSummary.Text))
         {
-            var statistics = new Statistics(Processor).Get(
+            var statistics = new VdlStatistics(Processor).Get(
                 Keyboard.Modifiers == ModifierKeys.Shift ?
                     StatisticsFormat.RowHeaders :
                     StatisticsFormat.Rows);

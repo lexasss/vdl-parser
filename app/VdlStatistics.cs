@@ -9,7 +9,7 @@ public enum StatisticsFormat
     RowHeaders
 }
 
-public class Statistics(Processor processor)
+public class VdlStatistics(Processor processor)
 {
     public double QuantileThreshold { get; set; } = 0.1;
 

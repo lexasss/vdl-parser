@@ -7,9 +7,9 @@ public class Vdl
     public string Name { get; }
     public int RecordCount { get; }
 
-    public Record[] Records { get; }
+    public VdlRecord[] Records { get; }
 
-    public Vdl(string name, Record[] records)
+    public Vdl(string name, VdlRecord[] records)
     {
         Name = name;
         RecordCount = records.Length;
@@ -24,13 +24,13 @@ public class Vdl
 
         System.Diagnostics.Debug.WriteLine($"Loading: {Path.GetFileName(filename)}");
 
-        var records = new List<Record>();
+        var records = new List<VdlRecord>();
         using var reader = new StreamReader(filename);
 
         while (!reader.EndOfStream)
         {
             var line = reader.ReadLine();
-            var record = Record.Parse(line);
+            var record = VdlRecord.Parse(line);
 
             if (record != null)
             {

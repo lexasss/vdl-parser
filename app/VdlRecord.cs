@@ -16,7 +16,7 @@ public record class NBackTaskEvent(NBackTaskEventType Type);
 public record class NBackTaskTrial(NBackTaskEventType Type, int Id) : NBackTaskEvent(Type);
 public record class NBackTaskTrialResult(NBackTaskEventType Type, int Id, bool IsCorrect) : NBackTaskTrial(Type, Id);
 
-public record class Record(
+public record class VdlRecord(
     long TimestampSystem,
     long TimestampHeadset,
     Rotation Eye, Rotation Head,
@@ -24,7 +24,7 @@ public record class Record(
     Vector3D HandPalm, Vector3D HandThumb, Vector3D HandIndex, Vector3D HandMiddle,
     NBackTaskEvent? NBackTaskEvent)
 {
-    public static Record? Parse(string? text)
+    public static VdlRecord? Parse(string? text)
     {
         if (string.IsNullOrEmpty(text))
             return null;
@@ -33,11 +33,11 @@ public record class Record(
         if (p.Length != 23)
             return null;
 
-        Record? result = null;
+        VdlRecord? result = null;
 
         try
         {
-            result = new Record(long.Parse(p[0]) / 10_000, long.Parse(p[1]) / 1_000_000,
+            result = new VdlRecord(long.Parse(p[0]) / 10_000, long.Parse(p[1]) / 1_000_000,
                 new Rotation(double.Parse(p[3]), double.Parse(p[2]), 0),
                 new Rotation(double.Parse(p[5]), double.Parse(p[4]), 0),
                 new Pupil(double.Parse(p[6]), double.Parse(p[7])),

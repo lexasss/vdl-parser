@@ -42,7 +42,7 @@ public class Processor : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    public void Feed(Record[] records)
+    public void Feed(VdlRecord[] records)
     {
         (HandSamples, GazeSamples) = GetHandGazeSamples(records);
 
@@ -58,7 +58,7 @@ public class Processor : IDisposable
         NBackTaskEvents = GetNBackTaskEvents(records);
     }
 
-    public static long GetTimestamp(Record record) => _settings.TimestampSource switch
+    public static long GetTimestamp(VdlRecord record) => _settings.TimestampSource switch
     {
         TimestampSource.Headset => record.TimestampHeadset,
         TimestampSource.System => record.TimestampSystem,
@@ -69,7 +69,7 @@ public class Processor : IDisposable
 
     static readonly Settings _settings = Settings.Instance;
 
-    public static (Sample[], Sample[]) GetHandGazeSamples(Record[] records)
+    public static (Sample[], Sample[]) GetHandGazeSamples(VdlRecord[] records)
     {
         return (
             _settings.HandDataSource switch
@@ -95,14 +95,14 @@ public class Processor : IDisposable
         );
     }
 
-    private static double[] GetPupilSizes(Record[] records) => records
+    private static double[] GetPupilSizes(VdlRecord[] records) => records
         .SkipWhile(record => record.NBackTaskEvent?.Type != NBackTaskEventType.SessionStart)
         .TakeWhile(record => record.NBackTaskEvent?.Type != NBackTaskEventType.SessionEnd)
         .Where(record => record.LeftPupil.Openness > 0.6 && record.RightPupil.Openness > 0.6)
         .Select(record => (record.LeftPupil.Size + record.RightPupil.Size) / 2)
         .ToArray();
 
-    private static TimestampedNbtEvent[] GetNBackTaskEvents(Record[] records) => records
+    private static TimestampedNbtEvent[] GetNBackTaskEvents(VdlRecord[] records) => records
         .Where(r => r.NBackTaskEvent != null)
         .Select(record => new TimestampedNbtEvent(GetTimestamp(record), record.NBackTaskEvent!))
         .ToArray();
