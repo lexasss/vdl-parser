@@ -8,8 +8,9 @@ public record class NtbRecord(int target, int? Response, bool IsCorrect, int? De
 /// <summary>
 /// N-Back task log data
 /// </summary>
-public class Nbt(int participantId, bool isNewCtt, bool isVr, double lambda, NtbRecord[] records)
+public class Nbt(string filename, int participantId, bool isNewCtt, bool isVr, double lambda, NtbRecord[] records) : Statistics
 {
+    public string Filename => filename;
     public double Lambda => lambda;
     public int ParticipantID => participantId;
     public string Condition => isNewCtt ? (isVr ? "nctt+vr" : "nctt") : "octt";
@@ -23,7 +24,7 @@ public class Nbt(int participantId, bool isNewCtt, bool isVr, double lambda, Ntb
 
         try
         {
-            return new Nbt(id, newCttFilename != null, isVr, lambda, File
+            return new Nbt(Path.GetFileName(filename), id, newCttFilename != null, isVr, lambda, File
                 .ReadAllLines(filename)
                 .SkipWhile(line => !line.StartsWith("#"))
                 .Skip(2)
@@ -48,18 +49,32 @@ public class Nbt(int participantId, bool isNewCtt, bool isVr, double lambda, Ntb
         return null;
     }
 
-    public override string ToString()
+    public override string Get(StatisticsFormat format = StatisticsFormat.Rows)
     {
         var correctness = 1.0 * _records.Sum(_records => _records.IsCorrect ? 1 : 0) / _records.Length;
         var (responseDelayMean, responseDelayStd) = _records
             .Where(record => record.Delay != null)
             .Select(record => (double)(record.Delay ?? 0))
             .MeanStandardDeviation();
-        return string.Join('\n',
-            correctness,
-            responseDelayMean,
-            responseDelayStd
-        );
+
+        (string, object)[] rows = [
+            ("Filename", Filename),
+            ("Participant ID", ParticipantID),
+            ("Condition", Condition),
+            ("Lambda", Lambda),
+            ("Correctness", correctness),
+            ("Response delay, mean", responseDelayMean),
+            ("Response delay, SD", responseDelayStd),
+        ];
+
+        if (format == StatisticsFormat.List)
+        {
+            return string.Join('\n', rows.Select(row => $"{row.Item1} = {row.Item2}"));
+        }
+
+        return string.Join('\n', format == StatisticsFormat.RowHeaders ?
+            rows.Skip(1).Select(row => row.Item1) :
+            rows.Skip(1).Select(row => row.Item2));
     }
 
     // Internal

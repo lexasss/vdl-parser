@@ -5,8 +5,9 @@ namespace VdlParser;
 
 public record class CttOldRecord(double Interval, double Lambda, double LineOffset, double Input);
 
-public class CttOld(int participantId, CttOldRecord[] records)
+public class CttOld(string filename, int participantId, CttOldRecord[] records) : Statistics
 {
+    public string Filename => filename;
     public double Lambda => _records[0].Lambda;
     public int ParticipantID => participantId;
     public string Condition => "octt";
@@ -20,7 +21,7 @@ public class CttOld(int participantId, CttOldRecord[] records)
             double trainingDuration = 0;
             double testDuration = 0;
 
-            return new CttOld(id, File
+            return new CttOld(Path.GetFileName(filename), id, File
                 .ReadAllLines(filename)
                 .Skip(3)
                 .Select(line =>
@@ -50,7 +51,7 @@ public class CttOld(int participantId, CttOldRecord[] records)
         return null;
     }
 
-    public override string ToString()
+    public override string Get(StatisticsFormat format = StatisticsFormat.Rows)
     {
         var (offsetMean, offsetSdt) = _records
             .Select(record => Math.Abs(record.LineOffset))
@@ -58,12 +59,26 @@ public class CttOld(int participantId, CttOldRecord[] records)
         var (inputMean, inputSdt) = _records
             .Select(record => Math.Abs(record.Input))
             .MeanStandardDeviation();
-        return string.Join('\n',
-            offsetMean,
-            offsetSdt,
-            inputMean,
-            inputSdt
-        );
+
+        (string, object)[] rows = [
+            ("Filename", Filename),
+            ("Participant ID", ParticipantID),
+            ("Condition", Condition),
+            ("Lambda", Lambda),
+            ("Offset, mean", offsetMean),
+            ("Offset, SD", offsetSdt),
+            ("Input, mean", inputMean),
+            ("Input, SD", inputSdt),
+        ];
+
+        if (format == StatisticsFormat.List)
+        {
+            return string.Join('\n', rows.Select(row => $"{row.Item1} = {row.Item2}"));
+        }
+
+        return string.Join('\n', format == StatisticsFormat.RowHeaders ?
+            rows.Skip(1).Select(row => row.Item1) :
+            rows.Skip(1).Select(row => row.Item2));
     }
 
     // Internal

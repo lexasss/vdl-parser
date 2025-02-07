@@ -17,6 +17,14 @@ public class Vdls
         Items.Add(vdl);
     }
 
+    public void Add(IEnumerable<Vdl> vdls)
+    {
+        foreach (var item in vdls)
+        {
+            Items.Add(item);
+        }
+    }
+
     public void Remove(Vdl vdl)
     {
         Items.Remove(vdl);

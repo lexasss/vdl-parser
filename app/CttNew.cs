@@ -5,8 +5,9 @@ namespace VdlParser;
 
 public record class CttNewRecord(long Timestamp, double Lambda, double LineOffset, double Input);
 
-public class CttNew(int participantId, bool isVr, CttNewRecord[] records)
+public class CttNew(string filename, int participantId, bool isVr, CttNewRecord[] records) : Statistics
 {
+    public string Filename => filename;
     public double Lambda => _records[0].Lambda;
     public int ParticipantID => participantId;
     public string Condition => isVr ? "nctt+vr" : "nctt";
@@ -20,7 +21,7 @@ public class CttNew(int participantId, bool isVr, CttNewRecord[] records)
         {
             long startTimestamp = 0;
 
-            return new CttNew(id, isVr, File
+            return new CttNew(Path.GetFileName(filename), id, isVr, File
                 .ReadAllLines(filename)
                 .Skip(1)
                 .Select(line =>
@@ -50,7 +51,7 @@ public class CttNew(int participantId, bool isVr, CttNewRecord[] records)
         return null;
     }
 
-    public override string ToString()
+    public override string Get(StatisticsFormat format = StatisticsFormat.Rows)
     {
         var (offsetMean, offsetSdt) = _records
             .Select(record => Math.Abs(record.LineOffset))
@@ -58,12 +59,26 @@ public class CttNew(int participantId, bool isVr, CttNewRecord[] records)
         var (inputMean, inputSdt) = _records
             .Select(record => Math.Abs(record.Input))
             .MeanStandardDeviation();
-        return string.Join('\n',
-            100 * offsetMean,
-            100 * offsetSdt,
-            100 * inputMean,
-            100 * inputSdt
-        );
+
+        (string, object)[] rows = [
+            ("Filename", Filename),
+            ("Participant ID", ParticipantID),
+            ("Condition", Condition),
+            ("Lambda", Lambda),
+            ("Offset, mean", 100 * offsetMean),
+            ("Offset, SD", 100 * offsetSdt),
+            ("Input, mean", 100 * inputMean),
+            ("Input, SD", 100 * inputSdt),
+        ];
+
+        if(format == StatisticsFormat.List)
+        {
+            return string.Join('\n', rows.Select(row => $"{row.Item1} = {row.Item2}"));
+        }
+
+        return string.Join('\n', format == StatisticsFormat.RowHeaders ?
+            rows.Skip(1).Select(row => row.Item1) :
+            rows.Skip(1).Select(row => row.Item2));
     }
 
     public static bool IsVR(string cttFilename)

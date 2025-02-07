@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel;
-using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -27,6 +26,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     // Internal
 
     GraphRenderer _graphRenderer;
+    Statistics[] _statistics = []; // log data other than VDL
 
     private void RefeedProcessor()
     {
@@ -64,73 +64,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         if (ofd.ShowDialog() == true)
         {
-            var statistics = new List<string>();
+            var (vdlList, statisticsList, summary) = Controller.LoadLogData(ofd.FileNames);
 
-            foreach (var filename in ofd.FileNames)
-            {
-                bool wasParsed = false;
-                var fn = Path.GetFileName(filename);
-
-                if (fn.StartsWith("vdl-"))
-                {
-                    var vdl = Vdl.Load(filename);
-                    if (vdl != null)
-                    {
-                        Vdls.Add(vdl);
-                        wasParsed = true;
-                    }
-                }
-                else
-                {
-                    if (fn.StartsWith("ctt-"))
-                    {
-                        var ctt = CttNew.Load(filename);
-                        wasParsed = ctt != null;
-                        if (ctt != null)
-                            statistics.Add(string.Join('\n',
-                                fn,
-                                ctt.ParticipantID,
-                                ctt.Condition,
-                                ctt.Lambda,
-                                ctt.ToString()
-                            ));
-                    }
-                    else if (fn.EndsWith(".csv"))
-                    {
-                        var ctt = CttOld.Load(filename);
-                        wasParsed = ctt != null;
-                        if (ctt != null)
-                            statistics.Add(string.Join('\n',
-                                fn,
-                                ctt.ParticipantID,
-                                ctt.Condition,
-                                ctt.Lambda,
-                                ctt.ToString()
-                            ));
-                    }
-                    else if (fn.StartsWith("n-back-task-"))
-                    {
-                        var nbt = Nbt.Load(filename);
-                        wasParsed = nbt != null;
-                        if (nbt != null)
-                            statistics.Add(string.Join('\n',
-                                fn,
-                                nbt.ParticipantID,
-                                nbt.Condition,
-                                nbt.Lambda,
-                                nbt.ToString()
-                            ));
-                    }
-                }
-
-                txbSummary.Text = string.Join("\n\n", statistics);
-
-                if (!wasParsed)
-                {
-                    MessageBox.Show($"Cannot load or parse the file '{filename}'.",
-                        Title, MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
+            txbSummary.Text = string.Join("\n\n", summary);
+            _statistics = statisticsList.ToArray();
+            Vdls.Add(vdlList);
         }
     }
 
@@ -194,9 +132,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSettingsPanelVisible)));
     }
 
-    private void Vdls_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
+    private void Vdls_KeyUp(object sender, KeyEventArgs e)
     {
-        if (e.Key == System.Windows.Input.Key.Delete && Vdls.SelectedItem != null)
+        if (e.Key == Key.Delete && Vdls.SelectedItem != null)
         {
             Vdls.Remove(Vdls.SelectedItem);
             _graphRenderer.Reset();
@@ -208,19 +146,19 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         if (!string.IsNullOrEmpty(txbSummary.Text))
         {
-            var statistics = new VdlStatistics(Processor).Get(
-                Keyboard.Modifiers == ModifierKeys.Shift ?
-                    StatisticsFormat.RowHeaders :
-                    StatisticsFormat.Rows);
+            var wasCopied = Controller.CopySummaryToClipboard(
+                Vdls, Processor, _statistics,
+                Keyboard.Modifiers == ModifierKeys.Shift);
 
-            Clipboard.SetText(statistics);
-
-            lblCopied.Visibility = Visibility.Visible;
-            Task.Run(async () =>
+            if (wasCopied)
             {
-                await Task.Delay(2000);
-                Dispatcher.Invoke(() => lblCopied.Visibility = Visibility.Hidden);
-            });
+                lblCopied.Visibility = Visibility.Visible;
+                Task.Run(async () =>
+                {
+                    await Task.Delay(2000);
+                    Dispatcher.Invoke(() => lblCopied.Visibility = Visibility.Hidden);
+                });
+            }
         }
     }
 }

@@ -2,18 +2,9 @@
 
 namespace VdlParser;
 
-public enum StatisticsFormat
+public class VdlStatistics(Processor processor) : Statistics
 {
-    List,
-    Rows,
-    RowHeaders
-}
-
-public class VdlStatistics(Processor processor)
-{
-    public double QuantileThreshold { get; set; } = 0.1;
-
-    public string Get(StatisticsFormat format)
+    public override string Get(StatisticsFormat format)
     {
         var gazeHandMatchCount = processor.Trials
             .Where(trial => trial.HasHandGazeMatch)
