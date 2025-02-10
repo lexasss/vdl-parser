@@ -25,6 +25,7 @@ public class Settings : INotifyPropertyChanged
     public int MaxHandGazeDelay { get; set; } = 1500; // ms
     public BlinkShape BlinkShape { get; set; } = BlinkShape.Strip;
     public TimestampSource TimestampSource { get; set; } = TimestampSource.System;
+    public double QuantileThreshold { get; set; } = 0.1;
 
     public string LogFolder
     {
@@ -52,6 +53,7 @@ public class Settings : INotifyPropertyChanged
         settings.MaxHandGazeDelay = MaxHandGazeDelay;
         settings.BlinkShape = (int)BlinkShape;
         settings.TimestampSource = (int)TimestampSource;
+        settings.QuantileThreshold = QuantileThreshold;
 
         settings.LogFolder = LogFolder;
 
@@ -80,6 +82,7 @@ public class Settings : INotifyPropertyChanged
         MaxHandGazeDelay  = settings.MaxHandGazeDelay;
         BlinkShape = (BlinkShape)settings.BlinkShape;
         TimestampSource = (TimestampSource)settings.TimestampSource;
+        QuantileThreshold = settings.QuantileThreshold;
 
         LogFolder = settings.LogFolder;
     }

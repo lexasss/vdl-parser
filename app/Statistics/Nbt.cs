@@ -8,7 +8,7 @@ public record class NtbRecord(int target, int? Response, bool IsCorrect, int? De
 /// <summary>
 /// N-Back task log data
 /// </summary>
-public class Nbt(string filename, int participantId, bool isNewCtt, bool isVr, double lambda, NtbRecord[] records) : Statistics
+public class Nbt(string filename, int participantId, bool isNewCtt, bool isVr, double lambda, NtbRecord[] records) : IStatistics
 {
     public string Filename => filename;
     public double Lambda => lambda;
@@ -49,7 +49,7 @@ public class Nbt(string filename, int participantId, bool isNewCtt, bool isVr, d
         return null;
     }
 
-    public override string Get(Format format = Format.Rows)
+    public string Get(Format format = Format.Rows)
     {
         var correctness = 1.0 * _records.Sum(_records => _records.IsCorrect ? 1 : 0) / _records.Length;
         var (responseDelayMean, responseDelayStd) = _records

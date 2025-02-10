@@ -130,5 +130,17 @@ namespace VdlParser.Properties {
                 this["TimestampSource"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0.1")]
+        public double QuantileThreshold {
+            get {
+                return ((double)(this["QuantileThreshold"]));
+            }
+            set {
+                this["QuantileThreshold"] = value;
+            }
+        }
     }
 }

@@ -4,11 +4,13 @@ namespace VdlParser;
 
 public record class Timestamped(long Timestamp, double Value);
 
+public record class Bid(double Mean, int Size);
+
 public class TemproralBids
 {
     public int BidCount { get; set; } = 5;
 
-    public double[] Get(Timestamped[] points)
+    public Bid[] Get(Timestamped[] points)
     {
         if (points.Length < BidCount)
             return [];
@@ -17,13 +19,13 @@ public class TemproralBids
         var bids = new List<double>[BidCount];
 
         int bidID = 0;
-        bids[0] = new List<double>();
+        bids[0] = [];
         double bidEdge = points[0].Timestamp + bidSize;
 
         for (int i = 0; i < points.Length; i++)
         {
             var point = points[i];
-            while (point.Timestamp > bidEdge)
+            while ((point.Timestamp - bidEdge) > EPSILON)
             {
                 bidID += 1;
                 bids[bidID] = new List<double>();
@@ -33,7 +35,11 @@ public class TemproralBids
         }
 
         return bids
-            .Select(bid => bid?.Mean() ?? 0)
+            .Select(bid => new Bid(bid?.Mean() ?? 0, bid?.Count ?? 0))
             .ToArray();
     }
+
+    // Internal
+
+    const double EPSILON = 0.1;
 }

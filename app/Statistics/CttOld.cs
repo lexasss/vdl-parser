@@ -5,7 +5,7 @@ namespace VdlParser.Statistics;
 
 public record class CttOldRecord(double Interval, double Lambda, double LineOffset, double Input);
 
-public class CttOld(string filename, int participantId, CttOldRecord[] records) : Statistics
+public class CttOld(string filename, int participantId, CttOldRecord[] records) : IStatistics
 {
     public string Filename => filename;
     public double Lambda => _records[0].Lambda;
@@ -51,7 +51,7 @@ public class CttOld(string filename, int participantId, CttOldRecord[] records) 
         return null;
     }
 
-    public override string Get(Format format = Format.Rows)
+    public string Get(Format format = Format.Rows)
     {
         var (offsetMean, offsetSdt) = _records
             .Select(record => Math.Abs(record.LineOffset))

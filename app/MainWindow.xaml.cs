@@ -26,7 +26,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     // Internal
 
     GraphRenderer _graphRenderer;
-    Statistics.Statistics[] _statistics = []; // log data other than VDL
+    Statistics.IStatistics[] _statistics = []; // log data other than VDL
 
     private void RefeedProcessor()
     {
@@ -66,12 +66,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             Vdls.SelectedItem = null;
 
-            var (vdlList, statisticsList) = Controller.LoadLogData(ofd.FileNames);
-            var summary = statisticsList.Select(statistics => string.Join('\n', statistics.Get(Statistics.Format.List)));
+            (var vdlList, _statistics) = Controller.LoadLogData(ofd.FileNames);
 
-            txbSummary.Text = string.Join("\n\n", summary);
-            _statistics = statisticsList.ToArray();
             Vdls.Add(vdlList);
+
+            var summary = _statistics.Select(statistics => string.Join('\n', statistics.Get(Statistics.Format.List)));
+            txbSummary.Text = string.Join("\n\n", summary);
         }
     }
 
@@ -149,7 +149,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         if (!string.IsNullOrEmpty(txbSummary.Text))
         {
-            Statistics.Statistics[] statistics = Vdls.SelectedItem != null
+            var statistics = Vdls.SelectedItem != null
                 ? [new Statistics.Vdl(Processor)]
                 : _statistics;
 

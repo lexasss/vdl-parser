@@ -2,21 +2,19 @@
 
 namespace VdlParser.Statistics;
 
-public class Vdl(Processor processor) : Statistics
+public class Vdl(Processor processor) : IStatistics
 {
-    public override string Get(Format format)
+    public string Get(Format format)
     {
-        var gazeHandMatchCount = processor.Trials
-            .Where(trial => trial.HasHandGazeMatch)
-            .Count();
+        var gazeHandMatches = processor.Trials
+            .Where(trial => trial.HasHandGazeMatch);
+        var gazeHandMatchCount = gazeHandMatches.Count();
         var matchesCountPercentage = 100.0 * gazeHandMatchCount / processor.Trials.Count();
         var responseIntervals = processor.Trials
             .Where(trial => trial.ResponseTimestamp > 0)
             .Select(trial => (double)(trial.ResponseTimestamp - trial.StartTimestamp));
         var (responseIntervalMean, responseIntervalStd) = responseIntervals.MeanStandardDeviation();
-        var gazeHandIntervals = processor.Trials
-            .Where(trial => trial.HasHandGazeMatch)
-            .Select(trial => (double)trial.GazeHandInterval);
+        var gazeHandIntervals = gazeHandMatches.Select(trial => -(double)trial.GazeHandInterval);
         var (gazeHandIntervalMean, gazeHandIntervalStd) = gazeHandIntervals.MeanStandardDeviation();
         var glanceDurations = processor.GazePeaks.Select(peak => (double)(peak.TimestampEnd - peak.TimestampStart));
         var (glanceDurationMean, glanceDurationStd) = glanceDurations.MeanStandardDeviation();
@@ -28,15 +26,18 @@ public class Vdl(Processor processor) : Statistics
             .Where(gdm => gdm.IsLong)
             .Count();
         var tb = new TemproralBids();
-        var gazeHandIntervalBids = tb.Get(processor.Trials
-                .Where(trial => trial.HasHandGazeMatch)
-                .Select(trial => new Timestamped(trial.StartTimestamp, trial.GazeHandInterval))
+        var gazeHandIntervalBids = tb.Get(gazeHandMatches
+                .Select(trial => new Timestamped(trial.StartTimestamp, -trial.GazeHandInterval))
                 .ToArray())
-            .Select(bid => Math.Round(bid));
+            .Select(bid => Math.Round(bid.Mean));
+        var matchBids = tb.Get(processor.Trials
+                .Select(trial => new Timestamped(trial.StartTimestamp, trial.HasHandGazeMatch ? 1 : 0))
+                .ToArray())
+            .Select(bid => bid.Mean).ToArray();
         var correctResponses = (double)processor.Trials.Sum(trial => trial.IsCorrect ? 1 : 0) / processor.Trials.Length;
 
-        var ql = QuantileThreshold;
-        var qh = 1.0 - QuantileThreshold;
+        var ql = Settings.Instance.QuantileThreshold;
+        var qh = 1.0 - ql;
 
         if (format == Format.List)
             return string.Join('\n', [
@@ -66,6 +67,8 @@ public class Vdl(Processor processor) : Statistics
                 ("Hand peaks", processor.HandPeaks.Length),
                 ("Gaze peaks", processor.GazePeaks.Length),
                 ("Peak matches, %", matchesCountPercentage),
+                ($"{string.Join('\n', matchBids.Select((_, i) => $"Peak matches, bid {i+1}"))}",
+                 $"{string.Join('\n', matchBids)}"),
                 ("Response duration, mean", responseIntervalMean),
                 ("Response duration, SD", responseIntervalStd),
                 ("Response duration, median", responseIntervals.Median()),
@@ -76,7 +79,7 @@ public class Vdl(Processor processor) : Statistics
                 ("Gaze-hand delay, median", gazeHandIntervals.Median()),
                 ($"Gaze-hand delay, quantile {ql*100:F0}%", gazeHandIntervals.Quantile(ql)),
                 ($"Gaze-hand delay, quantile {qh*100:F0}%", gazeHandIntervals.Quantile(qh)),
-                ($"{string.Join('\n', gazeHandIntervalBids.Select((_, i) => $"bid {i+1}"))}",
+                ($"{string.Join('\n', gazeHandIntervalBids.Select((_, i) => $"Gaze-hand delay, bid {i+1}"))}",
                  $"{string.Join('\n', gazeHandIntervalBids)}"),
                 ("Glance duration, mean", glanceDurationMean),
                 ("Glance duration, SD", glanceDurationStd),

@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Windows;
+using VdlParser.Statistics;
 
 namespace VdlParser;
 
@@ -12,9 +13,9 @@ public class Controller
     /// <returns>returns a tuple with 
     /// a. a list of Vdl data object, and 
     /// b. a list of other log files that share common base class to provide simple statistics only</returns>
-    public static (Vdl[], Statistics.Statistics[]) LoadLogData(string[] filenames)
+    public static (Vdl[], IStatistics[]) LoadLogData(string[] filenames)
     {
-        var statisticsList = new List<Statistics.Statistics>();
+        var statisticsList = new List<IStatistics>();
         var vdlList = new List<Vdl>();
 
         foreach (var filename in filenames)
@@ -33,13 +34,13 @@ public class Controller
             }
             else
             {
-                Statistics.Statistics? statistics = null;
+                IStatistics? statistics = null;
                 if (fn.StartsWith("ctt-"))
-                    statistics = Statistics.CttNew.Load(filename);
+                    statistics = CttNew.Load(filename);
                 else if (fn.EndsWith(".csv"))
-                    statistics = Statistics.CttOld.Load(filename);
+                    statistics = CttOld.Load(filename);
                 else if (fn.StartsWith("n-back-task-"))
-                    statistics = Statistics.Nbt.Load(filename);
+                    statistics = Nbt.Load(filename);
 
                 wasParsed = statistics != null;
                 if (statistics != null)
@@ -61,7 +62,7 @@ public class Controller
         );
     }
 
-    public static bool CopySummaryToClipboard(Statistics.Statistics[] statistics, bool onlyHeaders)
+    public static bool CopySummaryToClipboard(IStatistics[] statistics, bool onlyHeaders)
     {
         string? summary = null;
 
@@ -72,8 +73,8 @@ public class Controller
             {
                 table.Add(stat.Get(
                         onlyHeaders ?
-                            Statistics.Format.RowHeaders :
-                            Statistics.Format.Rows)
+                            Format.RowHeaders :
+                            Format.Rows)
                     .Split('\n')
                     .ToArray()
                 );
