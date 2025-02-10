@@ -22,9 +22,9 @@ public class Settings : INotifyPropertyChanged
 
     public HandDataSource HandDataSource { get; set; } = HandDataSource.IndexFinger;
     public GazeDataSource GazeDataSource { get; set; } = GazeDataSource.YawRotation;
-    public int MaxHandGazeDelay { get; set; } = 1500; // ms
     public BlinkShape BlinkShape { get; set; } = BlinkShape.Strip;
     public TimestampSource TimestampSource { get; set; } = TimestampSource.System;
+    public int MaxHandGazeDelay { get; set; } = 1500; // ms
     public double QuantileThreshold { get; set; } = 0.1;
 
     public string LogFolder

@@ -18,7 +18,7 @@ public enum GazeDataSource
 
 public record class TimestampedNbtEvent(long Timestamp, NBackTaskEvent Event);
 
-public class Processor : IDisposable
+public class Processor
 {
     public PeakDetector HandPeakDetector { get; } = PeakDetector.Load(DataSourceType.Hand);
     public PeakDetector GazePeakDetector { get; } = PeakDetector.Load(DataSourceType.Gaze);
@@ -33,13 +33,11 @@ public class Processor : IDisposable
     public double[] PupilSizes { get; private set; } = [];
     public TimestampedNbtEvent[] NBackTaskEvents { get; private set; } = [];
 
-    public void Dispose()
+    public void SaveDetectors()
     {
         PeakDetector.Save(DataSourceType.Hand, HandPeakDetector);
         PeakDetector.Save(DataSourceType.Gaze, GazePeakDetector);
         BlinkDetector.Save(BlinkDetector);
-
-        GC.SuppressFinalize(this);
     }
 
     public void Feed(VdlRecord[] records)

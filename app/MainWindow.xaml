@@ -7,8 +7,8 @@
         xmlns:local="clr-namespace:VdlParser"
         mc:Ignorable="d"
         Title="VDL file parser"
-        Height="580" Width="1200"
-        MinHeight="580" MinWidth="1200"
+        Height="640" Width="1200"
+        MinHeight="640" MinWidth="1200"
         Icon="/Assets/images/icon.png"
         Closed="Window_Closed">
 
@@ -280,6 +280,11 @@
                     </Grid.RowDefinitions>
 
                     <StackPanel Grid.Row="0">
+                        <StackPanel.Resources>
+                            <Style TargetType="Separator">
+                                <Setter Property="Margin" Value="0,6"/>
+                            </Style>
+                        </StackPanel.Resources>
                         <Grid DataContext="{Binding Path=Processor.HandPeakDetector, Mode=OneTime}">
                             <Grid.RowDefinitions>
                                 <RowDefinition/>
@@ -320,7 +325,7 @@
                                       SelectedItem="{Binding Direction, Mode=TwoWay}"/>
                         </Grid>
 
-                        <Separator Margin="2,12"/>
+                        <Separator/>
 
                         <Grid DataContext="{Binding Path=Processor.GazePeakDetector, Mode=OneTime}">
                             <Grid.RowDefinitions>
@@ -362,7 +367,7 @@
                                       SelectedItem="{Binding Direction, Mode=TwoWay}"/>
                         </Grid>
 
-                        <Separator Margin="2,12"/>
+                        <Separator/>
 
                         <Grid DataContext="{Binding Path=Processor.BlinkDetector, Mode=OneTime}">
                             <Grid.RowDefinitions>
@@ -396,6 +401,32 @@
                                    Content="Max interval to collapse (ms)"/>
                             <TextBox Grid.Row="4" Grid.Column="1"
                                      Text="{Binding MergeInterval, Mode=TwoWay}"/>
+                        </Grid>
+
+                        <Separator/>
+
+                        <Grid DataContext="{Binding Path=Settings, Mode=OneTime}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition/>
+                                <ColumnDefinition Width="60"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Label Grid.Row="0" Grid.ColumnSpan="2"
+                                   Style="{StaticResource PdHeader}"
+                                   Content="Other"/>
+                            <Label Grid.Row="1" Grid.Column="0"
+                                   Content="Max hand-gaze interval (ms)"/>
+                            <TextBox Grid.Row="1" Grid.Column="1"
+                                     Text="{Binding MaxHandGazeDelay, Mode=TwoWay}"/>
+                            <Label Grid.Row="2" Grid.Column="0"
+                                   Content="Quantile threshold"/>
+                            <TextBox Grid.Row="2" Grid.Column="1"
+                                     Text="{Binding QuantileThreshold, Mode=TwoWay}"/>
                         </Grid>
                     </StackPanel>
 

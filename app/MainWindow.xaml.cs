@@ -51,7 +51,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void Window_Closed(object sender, EventArgs e)
     {
-        Processor.Dispose();
+        Processor.SaveDetectors();
     }
 
     private void OpenButton_Click(object sender, RoutedEventArgs e)
