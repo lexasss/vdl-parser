@@ -1,7 +1,7 @@
 ﻿using MathNet.Numerics.Statistics;
 using System.IO;
 
-namespace VdlParser;
+namespace VdlParser.Statistics;
 
 public record class NtbRecord(int target, int? Response, bool IsCorrect, int? Delay, int TouchCount);
 
@@ -49,7 +49,7 @@ public class Nbt(string filename, int participantId, bool isNewCtt, bool isVr, d
         return null;
     }
 
-    public override string Get(StatisticsFormat format = StatisticsFormat.Rows)
+    public override string Get(Format format = Format.Rows)
     {
         var correctness = 1.0 * _records.Sum(_records => _records.IsCorrect ? 1 : 0) / _records.Length;
         var (responseDelayMean, responseDelayStd) = _records
@@ -67,12 +67,12 @@ public class Nbt(string filename, int participantId, bool isNewCtt, bool isVr, d
             ("Response delay, SD", responseDelayStd),
         ];
 
-        if (format == StatisticsFormat.List)
+        if (format == Format.List)
         {
             return string.Join('\n', rows.Select(row => $"{row.Item1} = {row.Item2}"));
         }
 
-        return string.Join('\n', format == StatisticsFormat.RowHeaders ?
+        return string.Join('\n', format == Format.RowHeaders ?
             rows.Skip(1).Select(row => row.Item1) :
             rows.Skip(1).Select(row => row.Item2));
     }

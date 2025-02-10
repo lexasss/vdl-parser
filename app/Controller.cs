@@ -1,16 +1,20 @@
-﻿using MathNet.Numerics.Statistics;
-using System.IO;
+﻿using System.IO;
 using System.Windows;
-using System.Windows.Input;
 
 namespace VdlParser;
 
 public class Controller
 {
-    public static (Vdl[], Statistics[], string[]) LoadLogData(string[] filenames)
+    /// <summary>
+    /// Reads and parses log files.
+    /// </summary>
+    /// <param name="filenames">List of file names</param>
+    /// <returns>returns a tuple with 
+    /// a. a list of Vdl data object, and 
+    /// b. a list of other log files that share common base class to provide simple statistics only</returns>
+    public static (Vdl[], Statistics.Statistics[]) LoadLogData(string[] filenames)
     {
-        var summary = new List<string>();
-        var statisticsList = new List<Statistics>();
+        var statisticsList = new List<Statistics.Statistics>();
         var vdlList = new List<Vdl>();
 
         foreach (var filename in filenames)
@@ -29,18 +33,17 @@ public class Controller
             }
             else
             {
-                Statistics? statistics = null;
+                Statistics.Statistics? statistics = null;
                 if (fn.StartsWith("ctt-"))
-                    statistics = CttNew.Load(filename);
+                    statistics = Statistics.CttNew.Load(filename);
                 else if (fn.EndsWith(".csv"))
-                    statistics = CttOld.Load(filename);
+                    statistics = Statistics.CttOld.Load(filename);
                 else if (fn.StartsWith("n-back-task-"))
-                    statistics = Nbt.Load(filename);
+                    statistics = Statistics.Nbt.Load(filename);
 
                 wasParsed = statistics != null;
                 if (statistics != null)
                 {
-                    summary.Add(string.Join('\n', statistics.Get(StatisticsFormat.List)));
                     statisticsList.Add(statistics);
                 }
             }
@@ -54,31 +57,23 @@ public class Controller
 
         return (
             vdlList.ToArray(),
-            statisticsList.ToArray(),
-            summary.ToArray()
+            statisticsList.ToArray()
         );
     }
 
-    public static bool CopySummaryToClipboard(Vdls vdls, Processor processor, Statistics[] statistics, bool onlyHeaders)
+    public static bool CopySummaryToClipboard(Statistics.Statistics[] statistics, bool onlyHeaders)
     {
         string? summary = null;
 
-        if (vdls.SelectedItem != null)
-        {
-            summary = new VdlStatistics(processor).Get(
-                 onlyHeaders ?
-                    StatisticsFormat.RowHeaders :
-                    StatisticsFormat.Rows);
-        }
-        else if (statistics.Length > 0)
+        if (statistics.Length > 0)
         {
             var table = new List<string[]>();
             foreach (var stat in statistics)
             {
                 table.Add(stat.Get(
                         onlyHeaders ?
-                            StatisticsFormat.RowHeaders :
-                            StatisticsFormat.Rows)
+                            Statistics.Format.RowHeaders :
+                            Statistics.Format.Rows)
                     .Split('\n')
                     .ToArray()
                 );

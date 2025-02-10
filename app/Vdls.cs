@@ -1,11 +1,22 @@
 ﻿using System.Collections.ObjectModel;
+using System.ComponentModel;
 
 namespace VdlParser;
 
-public class Vdls
+public class Vdls : INotifyPropertyChanged
 {
     public ObservableCollection<Vdl> Items { get; }
-    public Vdl? SelectedItem { get; set; } = null;
+    public Vdl? SelectedItem
+    {
+        get => _selectedItem;
+        set
+        {
+            _selectedItem = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedItem)));
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
 
     public Vdls()
     {
@@ -37,4 +48,5 @@ public class Vdls
     // Internal
 
     List<Vdl> _vdls = [];
+    Vdl? _selectedItem = null;
 }

@@ -1,10 +1,10 @@
 ﻿using MathNet.Numerics.Statistics;
 
-namespace VdlParser;
+namespace VdlParser.Statistics;
 
-public class VdlStatistics(Processor processor) : Statistics
+public class Vdl(Processor processor) : Statistics
 {
-    public override string Get(StatisticsFormat format)
+    public override string Get(Format format)
     {
         var gazeHandMatchCount = processor.Trials
             .Where(trial => trial.HasHandGazeMatch)
@@ -38,7 +38,7 @@ public class VdlStatistics(Processor processor) : Statistics
         var ql = QuantileThreshold;
         var qh = 1.0 - QuantileThreshold;
 
-        if (format == StatisticsFormat.List)
+        if (format == Format.List)
             return string.Join('\n', [
                 $"Hand/Gaze peaks: {processor.HandPeaks.Length}/{processor.GazePeaks.Length}",
                 $"  match count = {processor.Trials.Length} ({matchesCountPercentage:F1}%)",
@@ -60,7 +60,7 @@ public class VdlStatistics(Processor processor) : Statistics
                 $"  blinks: {blinkCount}",
                 $"  eyes closed or lost: {longEyeLostCount}",
             ]);
-        else if (format == StatisticsFormat.Rows || format == StatisticsFormat.RowHeaders)
+        else if (format == Format.Rows || format == Format.RowHeaders)
         {
             (string, object)[] rows = [
                 ("Hand peaks", processor.HandPeaks.Length),
@@ -93,7 +93,7 @@ public class VdlStatistics(Processor processor) : Statistics
                 ("Long eye losses", longEyeLostCount),
                 ("Correct responses, %", 100*correctResponses),
             ];
-            return string.Join('\n', format == StatisticsFormat.RowHeaders ?
+            return string.Join('\n', format == Format.RowHeaders ?
                 rows.Select(row => row.Item1) :
                 rows.Select(row => row.Item2));
         }

@@ -1,6 +1,6 @@
-﻿namespace VdlParser;
+﻿namespace VdlParser.Statistics;
 
-public enum StatisticsFormat
+public enum Format
 {
     List,
     Rows,
@@ -11,5 +11,5 @@ public abstract class Statistics
 {
     public static double QuantileThreshold { get; set; } = 0.1;
 
-    public abstract string Get(StatisticsFormat format);
+    public abstract string Get(Format format);
 }

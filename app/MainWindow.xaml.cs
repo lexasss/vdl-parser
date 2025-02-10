@@ -26,7 +26,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     // Internal
 
     GraphRenderer _graphRenderer;
-    Statistics[] _statistics = []; // log data other than VDL
+    Statistics.Statistics[] _statistics = []; // log data other than VDL
 
     private void RefeedProcessor()
     {
@@ -43,7 +43,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         else if (_graphRenderer.Content == GraphContent.Processed)
         {
             _graphRenderer.DisplayProcessedData(Processor);
-            txbSummary.Text = new VdlStatistics(Processor).Get(StatisticsFormat.List);
+            txbSummary.Text = new Statistics.Vdl(Processor).Get(Statistics.Format.List);
         }
     }
 
@@ -64,7 +64,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         if (ofd.ShowDialog() == true)
         {
-            var (vdlList, statisticsList, summary) = Controller.LoadLogData(ofd.FileNames);
+            Vdls.SelectedItem = null;
+
+            var (vdlList, statisticsList) = Controller.LoadLogData(ofd.FileNames);
+            var summary = statisticsList.Select(statistics => string.Join('\n', statistics.Get(Statistics.Format.List)));
 
             txbSummary.Text = string.Join("\n\n", summary);
             _statistics = statisticsList.ToArray();
@@ -98,7 +101,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
         Processor.Feed(Vdls.SelectedItem.Records);
         _graphRenderer.DisplayProcessedData(Processor);
-        txbSummary.Text = new VdlStatistics(Processor).Get(StatisticsFormat.List);
+        txbSummary.Text = new Statistics.Vdl(Processor).Get(Statistics.Format.List);
     }
 
     private void PeakDetectorDataSource_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -116,7 +119,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (_graphRenderer.Content == GraphContent.Processed)
         {
             _graphRenderer.DisplayProcessedData(Processor);
-            txbSummary.Text = new VdlStatistics(Processor).Get(StatisticsFormat.List);
+            txbSummary.Text = new Statistics.Vdl(Processor).Get(Statistics.Format.List);
         }
     }
 
@@ -146,8 +149,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         if (!string.IsNullOrEmpty(txbSummary.Text))
         {
-            var wasCopied = Controller.CopySummaryToClipboard(
-                Vdls, Processor, _statistics,
+            Statistics.Statistics[] statistics = Vdls.SelectedItem != null
+                ? [new Statistics.Vdl(Processor)]
+                : _statistics;
+
+            var wasCopied = Controller.CopySummaryToClipboard(statistics,
                 Keyboard.Modifiers == ModifierKeys.Shift);
 
             if (wasCopied)

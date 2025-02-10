@@ -1,7 +1,7 @@
 ﻿using MathNet.Numerics.Statistics;
 using System.IO;
 
-namespace VdlParser;
+namespace VdlParser.Statistics;
 
 public record class CttNewRecord(long Timestamp, double Lambda, double LineOffset, double Input);
 
@@ -51,7 +51,7 @@ public class CttNew(string filename, int participantId, bool isVr, CttNewRecord[
         return null;
     }
 
-    public override string Get(StatisticsFormat format = StatisticsFormat.Rows)
+    public override string Get(Format format = Format.Rows)
     {
         var (offsetMean, offsetSdt) = _records
             .Select(record => Math.Abs(record.LineOffset))
@@ -71,12 +71,12 @@ public class CttNew(string filename, int participantId, bool isVr, CttNewRecord[
             ("Input, SD", 100 * inputSdt),
         ];
 
-        if(format == StatisticsFormat.List)
+        if(format == Format.List)
         {
             return string.Join('\n', rows.Select(row => $"{row.Item1} = {row.Item2}"));
         }
 
-        return string.Join('\n', format == StatisticsFormat.RowHeaders ?
+        return string.Join('\n', format == Format.RowHeaders ?
             rows.Skip(1).Select(row => row.Item1) :
             rows.Skip(1).Select(row => row.Item2));
     }

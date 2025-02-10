@@ -141,7 +141,7 @@
             <ListBox x:Name="lsbVdls" Grid.Row="0"
                      DataContext="{Binding Vdls}"
                      ItemsSource="{Binding Items}"
-                     SelectedItem="{Binding SelectedItem, Mode=OneWayToSource}"
+                     SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
                      ItemContainerStyle="{StaticResource VdlListContainer}" SelectionChanged="VdlsListBox_SelectionChanged"
                      KeyUp="Vdls_KeyUp"/>
 
