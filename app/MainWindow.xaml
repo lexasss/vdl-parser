@@ -7,8 +7,8 @@
         xmlns:local="clr-namespace:VdlParser"
         mc:Ignorable="d"
         Title="VDL file parser"
-        Height="640" Width="1200"
-        MinHeight="640" MinWidth="1200"
+        Height="690" Width="1200"
+        MinHeight="690" MinWidth="1200"
         Icon="/Assets/images/icon.png"
         Closed="Window_Closed">
 
@@ -376,6 +376,8 @@
                                 <RowDefinition/>
                                 <RowDefinition/>
                                 <RowDefinition/>
+                                <RowDefinition/>
+                                <RowDefinition/>
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition/>
@@ -386,11 +388,11 @@
                                    Style="{StaticResource PdHeader}"
                                    Content="Blink detector"/>
                             <Label Grid.Row="1" Grid.Column="0"
-                                   Content="Min duration (ms)"/>
+                                   Content="Min blink duration (ms)"/>
                             <TextBox Grid.Row="1" Grid.Column="1"
                                      Text="{Binding BlinkMinDuration, Mode=TwoWay}"/>
                             <Label Grid.Row="2" Grid.Column="0"
-                                   Content="Max duration (ms)"/>
+                                   Content="Max blink duration (ms)"/>
                             <TextBox Grid.Row="2" Grid.Column="1"
                                      Text="{Binding BlinkMaxDuration, Mode=TwoWay}"/>
                             <Label Grid.Row="3" Grid.Column="0"
@@ -401,6 +403,14 @@
                                    Content="Max interval to collapse (ms)"/>
                             <TextBox Grid.Row="4" Grid.Column="1"
                                      Text="{Binding MergeInterval, Mode=TwoWay}"/>
+                            <Label Grid.Row="5" Grid.Column="0"
+                                   Content="Blink max level difference"/>
+                            <TextBox Grid.Row="5" Grid.Column="1"
+                                     Text="{Binding BlinkMaxLevelDifference, Mode=TwoWay}"/>
+                            <Label Grid.Row="6" Grid.Column="0"
+                                   Content="Level difference buffer size"/>
+                            <TextBox Grid.Row="6" Grid.Column="1"
+                                     Text="{Binding LevelDifferenceBufferSize, Mode=TwoWay}"/>
                         </Grid>
 
                         <Separator/>

@@ -2,7 +2,10 @@
 
 namespace VdlParser;
 
-public record class GazeDataMiss(long TimestampStart, long TimestampEnd, long Duration, bool IsBlink, bool IsLong);
+public record class GazeDataMiss(
+    long TimestampStart, int StartIndex, 
+    long TimestampEnd, int EndIndex,
+    long Duration, bool IsBlink, bool IsLong);
 
 public class BlinkDetector
 {
@@ -10,6 +13,8 @@ public class BlinkDetector
     public int BlinkMinDuration { get; set; } = 120; // ms
     public int BlinkMaxDuration { get; set; } = 350; // ms
     public int MergeInterval { get; set; } = 100; // ms
+    public double BlinkMaxLevelDifference { get; set; } = 6;
+    public int LevelDifferenceBufferSize { get; set; } = 3;
 
     public static BlinkDetector Load()
     {
@@ -49,6 +54,9 @@ public class BlinkDetector
     {
         var misses = new List<GazeDataMiss>();
 
+        int index = 0;
+        int lastTimestampIndex = 0;
+
         long lastTimestamp = 0;
         long lastBlinkEndTimestamp = 0;
         foreach (Sample sample in samples)
@@ -62,23 +70,64 @@ public class BlinkDetector
                     {
                         var missToBeReplaced = misses[^1];
                         interval = sample.Timestamp - missToBeReplaced.TimestampStart;
-                        misses[^1] = new GazeDataMiss(missToBeReplaced.TimestampStart, sample.Timestamp, interval,
+                        misses[^1] = new GazeDataMiss(missToBeReplaced.TimestampStart, missToBeReplaced.StartIndex,
+                            sample.Timestamp, index, interval,
                             interval >= BlinkMinDuration && interval <= BlinkMaxDuration,
                             interval > BlinkMaxDuration);
                     }
                     else
                     {
-                        misses.Add(new GazeDataMiss(lastTimestamp, sample.Timestamp, interval,
+                        misses.Add(new GazeDataMiss(lastTimestamp, lastTimestampIndex,
+                            sample.Timestamp, index, interval,
                             interval >= BlinkMinDuration && interval <= BlinkMaxDuration,
                             interval > BlinkMaxDuration));
                     }
+
                     lastBlinkEndTimestamp = sample.Timestamp;
                 }
             }
 
             lastTimestamp = sample.Timestamp;
+            lastTimestampIndex = index;
+
+            index += 1;
         }
 
-        return misses.ToArray();
+        var result = misses.ToArray();
+        ImproveGazeMissClassification(samples, result);
+
+        return result;
+    }
+
+    // Internal
+
+    private void ImproveGazeMissClassification(Sample[] samples, GazeDataMiss[] misses)
+    {
+        double GetMean(int index, int direction, int size)
+        {
+            double sum = 0;
+            int count = 0;
+            while (index >= 0 && index < samples.Length && count < size)
+            {
+                var sample = samples[index];
+                sum += sample.Value;
+                count += 1;
+                index += direction;
+            }
+
+            return sum / (count > 0 ? count : 1);
+        }
+
+        for (int i = 0; i < misses.Length; i++)
+        {
+            var miss = misses[i];
+            var startValue = GetMean(miss.StartIndex, -1, LevelDifferenceBufferSize);
+            var endValue = GetMean(miss.EndIndex, 1, LevelDifferenceBufferSize);
+
+            if (Math.Abs(startValue - endValue) > BlinkMaxLevelDifference)
+            {
+                misses[i] = miss with { IsBlink = false };
+            }
+        }
     }
 }
