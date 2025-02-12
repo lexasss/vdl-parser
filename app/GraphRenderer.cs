@@ -45,9 +45,9 @@ public class GraphRenderer(Graph graph)
         foreach (var blink in processor.GazeDataMisses.Where(gm => gm.IsBlink))
         {
             if (_settings.BlinkShape == BlinkShape.Strip)
-                _graph.Plot.AddHorizontalSpan(blink.TimestampStart, blink.TimestampEnd, COLOR_BLINK, label: EnsureSingle("Blink"));
+                _graph.Plot.AddHorizontalSpan(blink.StartTimestamp, blink.EndTimestamp, COLOR_BLINK, label: EnsureSingle("Blink"));
             else if (_settings.BlinkShape == BlinkShape.Ellipse)
-                _graph.Plot.AddEllipse((blink.TimestampStart + blink.TimestampEnd) / 2, 0,
+                _graph.Plot.AddEllipse((blink.StartTimestamp + blink.EndTimestamp) / 2, 0,
                     blink.Duration / 2, 2, COLOR_BLINK_ELLIPSE);
         }
 

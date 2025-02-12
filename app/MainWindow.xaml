@@ -18,6 +18,16 @@
         <local:BoolToVisibilityConverter x:Key="bool2vis"/>
         <sys:Boolean x:Key="true">True</sys:Boolean>
 
+        <Style TargetType="TextBox">
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="2,0"/>
+            <Setter Property="Margin" Value="0,2"/>
+        </Style>
+        <Style TargetType="ComboBox">
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="4,0"/>
+            <Setter Property="Margin" Value="0,2"/>
+        </Style>
         <Style TargetType="Button">
             <Setter Property="Padding" Value="8"/>
         </Style>
@@ -234,6 +244,7 @@
             </StackPanel>
 
             <TextBox x:Name="txbSummary" Grid.Row="3"
+                     VerticalContentAlignment="Top"
                      VerticalScrollBarVisibility="Auto"/>
             <Button Grid.Row="3"
                     Style="{StaticResource CopyButton}"

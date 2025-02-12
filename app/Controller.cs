@@ -18,6 +18,8 @@ public class Controller
         var statisticsList = new List<IStatistics>();
         var vdlList = new List<Vdl>();
 
+        PupilCalibration? pupilCalibration = null;
+
         foreach (var filename in filenames)
         {
             bool wasParsed = false;
@@ -25,11 +27,19 @@ public class Controller
 
             if (fn.StartsWith("vdl-"))
             {
-                var vdl = Vdl.Load(filename);
-                if (vdl != null)
+                if (fn.Contains("-calibration"))
                 {
-                    vdlList.Add(vdl);
-                    wasParsed = true;
+                    pupilCalibration = PupilCalibration.Load(filename);
+                    wasParsed = pupilCalibration != null;
+                }
+                else
+                {
+                    var vdl = Vdl.Load(filename);
+                    if (vdl != null)
+                    {
+                        vdlList.Add(vdl);
+                        wasParsed = true;
+                    }
                 }
             }
             else
@@ -55,6 +65,9 @@ public class Controller
                     App.Current.MainWindow.Title, MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+        foreach (var vdl in vdlList)
+            vdl.PupilCalibration = pupilCalibration;
 
         return (
             vdlList.ToArray(),

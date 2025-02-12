@@ -33,6 +33,8 @@ public class Processor
     public double[] PupilSizes { get; private set; } = [];
     public TimestampedNbtEvent[] NBackTaskEvents { get; private set; } = [];
 
+    public Vdl? Vdl { get; private set; } = null;
+
     public void SaveDetectors()
     {
         PeakDetector.Save(DataSourceType.Hand, HandPeakDetector);
@@ -40,8 +42,12 @@ public class Processor
         BlinkDetector.Save(BlinkDetector);
     }
 
-    public void Feed(VdlRecord[] records)
+    public void Feed(Vdl vdl)
     {
+        Vdl = vdl;
+
+        var records = Vdl.Records;
+
         (HandSamples, GazeSamples) = GetHandGazeSamples(records);
 
         HandPeaks = HandPeakDetector.Find(HandSamples);

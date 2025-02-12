@@ -3,8 +3,8 @@
 namespace VdlParser;
 
 public record class GazeDataMiss(
-    long TimestampStart, int StartIndex, 
-    long TimestampEnd, int EndIndex,
+    long StartTimestamp, int StartIndex, 
+    long EndTimestamp, int EndIndex,
     long Duration, bool IsBlink, bool IsLong);
 
 public class BlinkDetector
@@ -69,15 +69,17 @@ public class BlinkDetector
                     if (lastBlinkEndTimestamp > 0 && (lastTimestamp - lastBlinkEndTimestamp) < MergeInterval)
                     {
                         var missToBeReplaced = misses[^1];
-                        interval = sample.Timestamp - missToBeReplaced.TimestampStart;
-                        misses[^1] = new GazeDataMiss(missToBeReplaced.TimestampStart, missToBeReplaced.StartIndex,
+                        interval = sample.Timestamp - missToBeReplaced.StartTimestamp;
+                        misses[^1] = new GazeDataMiss(
+                            missToBeReplaced.StartTimestamp, missToBeReplaced.StartIndex,
                             sample.Timestamp, index, interval,
                             interval >= BlinkMinDuration && interval <= BlinkMaxDuration,
                             interval > BlinkMaxDuration);
                     }
                     else
                     {
-                        misses.Add(new GazeDataMiss(lastTimestamp, lastTimestampIndex,
+                        misses.Add(new GazeDataMiss(
+                            lastTimestamp, lastTimestampIndex,
                             sample.Timestamp, index, interval,
                             interval >= BlinkMinDuration && interval <= BlinkMaxDuration,
                             interval > BlinkMaxDuration));

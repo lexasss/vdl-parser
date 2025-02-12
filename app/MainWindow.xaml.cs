@@ -33,7 +33,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (Vdls.SelectedItem == null)
             return;
 
-        Processor.Feed(Vdls.SelectedItem.Records);
+        Processor.Feed(Vdls.SelectedItem);
 
         if (_graphRenderer.Content == GraphContent.RawData)
         {
@@ -58,7 +58,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         var ofd = new Microsoft.Win32.OpenFileDialog()
         {
-            Filter = "All log files|vdl-*.txt;ctt-*.txt;CTT*.csv;n-back-task-*.txt|VDL files|vdl-*.txt|CTT files|ctt-*.txt;CTT*.csv|NBack-Task files|n-back-task-*.txt",
+            Filter = "All log files|vdl-*.txt;ctt-*.txt;CTT*.csv;n-back-task-*.txt" + 
+                "|VDL files|vdl-*.txt" + 
+                "|CTT files|ctt-*.txt;CTT*.csv" + 
+                "|NBack-Task files|n-back-task-*.txt",
             Multiselect = true,
         };
 
@@ -82,7 +85,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             var vdl = e.AddedItems[0] as Vdl;
             if (vdl != null)
             {
-                Processor.Feed(vdl.Records);
+                Processor.Feed(vdl);
                 _graphRenderer.DisplayRawData(Processor.HandSamples, Processor.GazeSamples);
                 txbSummary.Text = null;
             }
@@ -99,7 +102,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (Vdls.SelectedItem == null)
             return;
 
-        Processor.Feed(Vdls.SelectedItem.Records);
+        Processor.Feed(Vdls.SelectedItem);
         _graphRenderer.DisplayProcessedData(Processor);
         txbSummary.Text = new Statistics.Vdl(Processor).Get(Statistics.Format.List);
     }

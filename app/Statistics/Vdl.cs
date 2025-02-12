@@ -35,6 +35,7 @@ public class Vdl(Processor processor) : IStatistics
                 .ToArray())
             .Select(bid => bid.Mean).ToArray();
         var correctResponses = (double)processor.Trials.Sum(trial => trial.IsCorrect ? 1 : 0) / processor.Trials.Length;
+        var calibratedPupilSizes = processor.PupilSizes.Select(size => size - (processor.Vdl?.PupilCalibration?.Size ?? 0));
 
         var ql = Settings.Instance.QuantileThreshold;
         var qh = 1.0 - ql;
@@ -57,6 +58,8 @@ public class Vdl(Processor processor) : IStatistics
                 $"Pupil size",
                 $"  mean = {pupilSizeMean:F2} (SD = {pupilSizeStd:F2})",
                 $"  median = {processor.PupilSizes.Median():F2} ({processor.PupilSizes.Quantile(ql):F2}..{processor.PupilSizes.Quantile(qh):F2})",
+                $"  calibrated mean = {calibratedPupilSizes.Mean():F2}",
+                $"  calibrated median = {calibratedPupilSizes.Median():F2} ({calibratedPupilSizes.Quantile(ql):F2}..{calibratedPupilSizes.Quantile(qh):F2})",
                 $"Gaze-lost events: {processor.GazeDataMisses.Length}",
                 $"  blinks: {blinkCount}",
                 $"  eyes closed or lost: {longEyeLostCount}",
@@ -95,6 +98,7 @@ public class Vdl(Processor processor) : IStatistics
                 ("Blinks", blinkCount),
                 ("Long eye losses", longEyeLostCount),
                 ("Correct responses, %", 100*correctResponses),
+                ("Calibrated pupil size, mean", pupilSizeMean - (processor.Vdl?.PupilCalibration?.Size ?? 0)),
             ];
             return string.Join('\n', format == Format.RowHeaders ?
                 rows.Select(row => row.Item1) :
