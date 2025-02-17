@@ -1,6 +1,7 @@
 ﻿using ScottPlot;
 using System.ComponentModel;
 using System.Windows.Controls;
+using VdlParser.Detectors;
 
 namespace VdlParser;
 

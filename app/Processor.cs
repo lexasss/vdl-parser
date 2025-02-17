@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using VdlParser.Detectors;
 
 namespace VdlParser;
 
@@ -23,6 +24,7 @@ public class Processor
     public PeakDetector HandPeakDetector { get; } = PeakDetector.Load(DataSourceType.Hand);
     public PeakDetector GazePeakDetector { get; } = PeakDetector.Load(DataSourceType.Gaze);
     public BlinkDetector BlinkDetector { get; } = BlinkDetector.Load();
+    public BlinkDetector2 BlinkDetector2 { get; } = BlinkDetector2.Load();
 
     public Sample[] HandSamples { get; private set; } = [];
     public Sample[] GazeSamples { get; private set; } = [];
@@ -30,6 +32,7 @@ public class Processor
     public Peak[] GazePeaks { get; private set; } = [];
     public Trial[] Trials { get; private set; } = [];
     public GazeDataMiss[] GazeDataMisses { get; private set; } = [];
+    public Blink[] Blinks { get; private set; } = [];
     public double[] PupilSizes { get; private set; } = [];
     public TimestampedNbtEvent[] NBackTaskEvents { get; private set; } = [];
 
@@ -40,6 +43,7 @@ public class Processor
         PeakDetector.Save(DataSourceType.Hand, HandPeakDetector);
         PeakDetector.Save(DataSourceType.Gaze, GazePeakDetector);
         BlinkDetector.Save(BlinkDetector);
+        BlinkDetector2.Save(BlinkDetector2);
     }
 
     public void Feed(Vdl vdl)
@@ -56,6 +60,7 @@ public class Processor
         Trials = Trial.GetTrials(records, HandPeaks, GazePeaks);
 
         GazeDataMisses = BlinkDetector.Find(GazeSamples);
+        Blinks = BlinkDetector2.Find(records);
 
         PupilSizes = GetPupilSizes(records);
 

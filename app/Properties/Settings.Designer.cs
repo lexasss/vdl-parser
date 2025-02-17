@@ -142,5 +142,17 @@ namespace VdlParser.Properties {
                 this["QuantileThreshold"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string BlinkDetector2 {
+            get {
+                return ((string)(this["BlinkDetector2"]));
+            }
+            set {
+                this["BlinkDetector2"] = value;
+            }
+        }
     }
 }

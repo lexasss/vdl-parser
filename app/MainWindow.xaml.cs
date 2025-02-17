@@ -107,6 +107,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         txbSummary.Text = new Statistics.Vdl(Processor).Get(Statistics.Format.List);
     }
 
+    private void TimestampSource_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        RefeedProcessor();
+    }
+
     private void PeakDetectorDataSource_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (IsLoaded && ((ComboBox)sender).SelectedItem is GazeDataSource)
@@ -114,20 +119,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             Processor.GazePeakDetector.ReversePeakSearchDirection();
         }
 
-        RefeedProcessor();
-    }
-
-    private void BlinkShape_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (_graphRenderer.Content == GraphContent.Processed)
-        {
-            _graphRenderer.DisplayProcessedData(Processor);
-            txbSummary.Text = new Statistics.Vdl(Processor).Get(Statistics.Format.List);
-        }
-    }
-
-    private void TimestampSource_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
         RefeedProcessor();
     }
 

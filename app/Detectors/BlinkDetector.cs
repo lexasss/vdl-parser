@@ -1,9 +1,9 @@
 ﻿using System.Text.Json;
 
-namespace VdlParser;
+namespace VdlParser.Detectors;
 
 public record class GazeDataMiss(
-    long StartTimestamp, int StartIndex, 
+    long StartTimestamp, int StartIndex,
     long EndTimestamp, int EndIndex,
     long Duration, bool IsBlink, bool IsLong);
 
@@ -59,6 +59,7 @@ public class BlinkDetector
 
         long lastTimestamp = 0;
         long lastBlinkEndTimestamp = 0;
+
         foreach (Sample sample in samples)
         {
             if (lastTimestamp > 0)
@@ -66,7 +67,7 @@ public class BlinkDetector
                 var interval = sample.Timestamp - lastTimestamp;
                 if (interval > MinGazeLostInterval)
                 {
-                    if (lastBlinkEndTimestamp > 0 && (lastTimestamp - lastBlinkEndTimestamp) < MergeInterval)
+                    if (lastBlinkEndTimestamp > 0 && lastTimestamp - lastBlinkEndTimestamp < MergeInterval)
                     {
                         var missToBeReplaced = misses[^1];
                         interval = sample.Timestamp - missToBeReplaced.StartTimestamp;

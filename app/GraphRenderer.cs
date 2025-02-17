@@ -1,4 +1,6 @@
-﻿namespace VdlParser;
+﻿using VdlParser.Detectors;
+
+namespace VdlParser;
 
 public enum GraphContent
 {
@@ -42,13 +44,9 @@ public class GraphRenderer(Graph graph)
             return label;
         }
 
-        foreach (var blink in processor.GazeDataMisses.Where(gm => gm.IsBlink))
+        foreach (var blink in processor.Blinks)
         {
-            if (_settings.BlinkShape == BlinkShape.Strip)
-                _graph.Plot.AddHorizontalSpan(blink.StartTimestamp, blink.EndTimestamp, COLOR_BLINK, label: EnsureSingle("Blink"));
-            else if (_settings.BlinkShape == BlinkShape.Ellipse)
-                _graph.Plot.AddEllipse((blink.StartTimestamp + blink.EndTimestamp) / 2, 0,
-                    blink.Duration / 2, 2, COLOR_BLINK_ELLIPSE);
+            _graph.Plot.AddHorizontalSpan(blink.StartTimestamp, blink.EndTimestamp, COLOR_BLINK, label: EnsureSingle("Blink"));
         }
 
         _graph.AddCurve(processor.HandSamples, COLOR_HAND, "Hand");
@@ -85,9 +83,6 @@ public class GraphRenderer(Graph graph)
     readonly System.Drawing.Color COLOR_HAND = System.Drawing.Color.Blue;
     readonly System.Drawing.Color COLOR_GAZE = System.Drawing.Color.Red;
     readonly System.Drawing.Color COLOR_BLINK = System.Drawing.Color.LightGray;
-    readonly System.Drawing.Color COLOR_BLINK_ELLIPSE = System.Drawing.Color.Gray;
-
-    readonly Settings _settings = Settings.Instance;
 
     readonly Graph _graph = graph;
 

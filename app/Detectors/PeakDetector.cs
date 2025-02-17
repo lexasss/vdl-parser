@@ -2,7 +2,7 @@
 using System.ComponentModel;
 using System.Text.Json;
 
-namespace VdlParser;
+namespace VdlParser.Detectors;
 
 public record class Sample(long Timestamp, double Value);
 public record class Peak(int StartIndex, long TimestampStart, long TimestampEnd, double Amplitude);
@@ -119,7 +119,7 @@ public class PeakDetector : INotifyPropertyChanged
             }
 
             i = firstValidDatapointIndex;
-            for (int j = i + 1; (i + j) < samples.Length && j < BufferSize; j++)
+            for (int j = i + 1; i + j < samples.Length && j < BufferSize; j++)
             {
                 if (IsBelowThreshold(samples[++i].Value, ignoranceThreshold))
                 {
@@ -144,7 +144,7 @@ public class PeakDetector : INotifyPropertyChanged
 
             var timestampCurrent = chunk[_bufferSize / 2].Timestamp;
             var timeElapsedSinceTheLastPeak = timestampLastPeakEnd > 0
-                ? (timestampCurrent - timestampLastPeakEnd)
+                ? timestampCurrent - timestampLastPeakEnd
                 : long.MaxValue;
 
             if (!isInPeak && IsAboveThreshold(difference, PeakThreshold) &&
@@ -164,7 +164,7 @@ public class PeakDetector : INotifyPropertyChanged
                     var timestampEnd = timestampCurrent;
                     timestampLastPeakEnd = timestampEnd;
 
-                    if ((timestampEnd - timestampStart) < MaxPeakDuration)
+                    if (timestampEnd - timestampStart < MaxPeakDuration)
                     {
                         var peakValue = samples[timestampStartIndex..i].Select(s => s.Value).Median();
                         peaks.Add(new Peak(timestampStartIndex, timestampStart, timestampEnd, peakValue));

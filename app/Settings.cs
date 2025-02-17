@@ -2,12 +2,6 @@
 
 namespace VdlParser;
 
-public enum BlinkShape
-{
-    Strip,
-    Ellipse
-}
-
 public enum TimestampSource
 {
     System,
@@ -22,7 +16,6 @@ public class Settings : INotifyPropertyChanged
 
     public HandDataSource HandDataSource { get; set; } = HandDataSource.IndexFinger;
     public GazeDataSource GazeDataSource { get; set; } = GazeDataSource.YawRotation;
-    public BlinkShape BlinkShape { get; set; } = BlinkShape.Strip;
     public TimestampSource TimestampSource { get; set; } = TimestampSource.System;
     public int MaxHandGazeDelay { get; set; } = 1500; // ms
     public double QuantileThreshold { get; set; } = 0.1;
@@ -51,7 +44,6 @@ public class Settings : INotifyPropertyChanged
         settings.HandDataSource = (int)HandDataSource;
         settings.GazeDataSource = (int)GazeDataSource;
         settings.MaxHandGazeDelay = MaxHandGazeDelay;
-        settings.BlinkShape = (int)BlinkShape;
         settings.TimestampSource = (int)TimestampSource;
         settings.QuantileThreshold = QuantileThreshold;
 
@@ -80,7 +72,6 @@ public class Settings : INotifyPropertyChanged
         HandDataSource = (HandDataSource)settings.HandDataSource;
         GazeDataSource = (GazeDataSource)settings.GazeDataSource;
         MaxHandGazeDelay  = settings.MaxHandGazeDelay;
-        BlinkShape = (BlinkShape)settings.BlinkShape;
         TimestampSource = (TimestampSource)settings.TimestampSource;
         QuantileThreshold = settings.QuantileThreshold;
 

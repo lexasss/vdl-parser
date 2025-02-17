@@ -5,10 +5,11 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:local="clr-namespace:VdlParser"
+        xmlns:det="clr-namespace:VdlParser.Detectors"
         mc:Ignorable="d"
         Title="VDL file parser"
-        Height="690" Width="1200"
-        MinHeight="690" MinWidth="1200"
+        Height="690" Width="1240"
+        MinHeight="690" MinWidth="1240"
         Icon="/Assets/images/icon.png"
         Closed="Window_Closed">
 
@@ -94,6 +95,14 @@
             </Style.Triggers>
         </Style>
 
+        <ObjectDataProvider x:Key="TimestampSourceProvider"
+                            MethodName="GetValues"
+                            ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="local:TimestampSource"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+
         <ObjectDataProvider x:Key="HandDataSourceProvider"
                             MethodName="GetValues"
                             ObjectType="{x:Type sys:Enum}">
@@ -114,23 +123,7 @@
                             MethodName="GetValues"
                             ObjectType="{x:Type sys:Enum}">
             <ObjectDataProvider.MethodParameters>
-                <x:Type TypeName="local:PeakDirection"/>
-            </ObjectDataProvider.MethodParameters>
-        </ObjectDataProvider>
-
-        <ObjectDataProvider x:Key="BlinkShapeProvider"
-                            MethodName="GetValues"
-                            ObjectType="{x:Type sys:Enum}">
-            <ObjectDataProvider.MethodParameters>
-                <x:Type TypeName="local:BlinkShape"/>
-            </ObjectDataProvider.MethodParameters>
-        </ObjectDataProvider>
-
-        <ObjectDataProvider x:Key="TimestampSourceProvider"
-                            MethodName="GetValues"
-                            ObjectType="{x:Type sys:Enum}">
-            <ObjectDataProvider.MethodParameters>
-                <x:Type TypeName="local:TimestampSource"/>
+                <x:Type TypeName="det:PeakDirection"/>
             </ObjectDataProvider.MethodParameters>
         </ObjectDataProvider>
     </Window.Resources>
@@ -179,22 +172,25 @@
                           ResizeBehavior="PreviousAndNext"/>
             <StackPanel Grid.Row="1"
                         Orientation="Horizontal">
+                <StackPanel.Resources>
+                    <Style TargetType="Separator">
+                        <Setter Property="Width" Value="30"/>
+                        <Setter Property="Background" Value="Transparent"/>
+                    </Style>
+                    <Style TargetType="Label">
+                        <Setter Property="VerticalAlignment" Value="Center"/>
+                    </Style>
+                </StackPanel.Resources>
+
                 <StackPanel Orientation="Horizontal"
                             DataContext="{Binding Path=Settings}"
                             HorizontalAlignment="Center"
                             Margin="0,8">
-                    <StackPanel.Resources>
-                        <Style TargetType="Separator">
-                            <Setter Property="Width" Value="30"/>
-                            <Setter Property="Background" Value="Transparent"/>
-                        </Style>
-                        <Style TargetType="Label">
-                            <Setter Property="VerticalAlignment" Value="Center"/>
-                        </Style>
-                    </StackPanel.Resources>
-
+                    <Label Style="{StaticResource PdHeader}"
+                               Content="Data sources"/>
+                    <Separator/>
                     <WrapPanel>
-                        <Label Content="Timestamps: "/>
+                        <Label Content="Timestamp"/>
                         <ComboBox ItemsSource="{Binding Source={StaticResource TimestampSourceProvider}}"
                                   SelectedItem="{Binding TimestampSource, Mode=TwoWay}"
                                   Width="80"
@@ -202,7 +198,7 @@
                     </WrapPanel>
                     <Separator/>
                     <WrapPanel>
-                        <Label Content="Hand: "/>
+                        <Label Content="Hand"/>
                         <ComboBox ItemsSource="{Binding Source={StaticResource HandDataSourceProvider}}"
                                   SelectedItem="{Binding HandDataSource, Mode=TwoWay}"
                                   Width="104"
@@ -210,32 +206,29 @@
                     </WrapPanel>
                     <Separator/>
                     <WrapPanel>
-                        <Label Content="Gaze: "/>
+                        <Label Content="Gaze"/>
                         <ComboBox ItemsSource="{Binding Source={StaticResource GazeDataSourceProvider}}"
                                   SelectedItem="{Binding GazeDataSource, Mode=TwoWay}"
                                   Width="104"
                                   SelectionChanged="PeakDetectorDataSource_SelectionChanged"/>
                     </WrapPanel>
-                    <Separator/>
-                    <WrapPanel>
-                        <Label Content="Blinks: "/>
-                        <ComboBox ItemsSource="{Binding Source={StaticResource BlinkShapeProvider}}"
-                                  SelectedItem="{Binding BlinkShape, Mode=TwoWay}"
-                                  Width="80"
-                                  SelectionChanged="BlinkShape_SelectionChanged"/>
-                    </WrapPanel>
-                    <Separator/>
-                    <CheckBox Content="Legend"
-                              VerticalAlignment="Center"
-                              IsChecked="{Binding IsLegendVisible, ElementName=graph, Mode=TwoWay}"/>
-                    <Separator/>
                 </StackPanel>
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Orientation="Horizontal"
                         VerticalAlignment="Center"
                         HorizontalAlignment="Right"
-                        Margin="0,0,4,0">
+                        Margin="0,1,4,0">
+                <StackPanel.Resources>
+                    <Style TargetType="Separator">
+                        <Setter Property="Width" Value="30"/>
+                        <Setter Property="Background" Value="Transparent"/>
+                    </Style>
+                </StackPanel.Resources>
+                <CheckBox Content="Legend"
+                              VerticalAlignment="Center"
+                              IsChecked="{Binding IsLegendVisible, ElementName=graph, Mode=TwoWay}"/>
+                <Separator/>
                 <Button IsEnabled="{Binding SelectedItem, ElementName=lsbVdls, Converter={StaticResource obj2bool}}"
                         Visibility="{Binding IsSettingsPanelVisible, Converter={StaticResource bool2vis}, ConverterParameter={StaticResource true}}"
                         Content="Analyze"
@@ -244,24 +237,24 @@
             </StackPanel>
 
             <TextBox x:Name="txbSummary" Grid.Row="3"
+                     Margin="0"
                      VerticalContentAlignment="Top"
                      VerticalScrollBarVisibility="Auto"/>
-            <Button Grid.Row="3"
+            <StackPanel Grid.Row="3"
+                        VerticalAlignment="Top"
+                        HorizontalAlignment="Right"
+                        Margin="16,8">
+                <Button 
                     Style="{StaticResource CopyButton}"
-                    VerticalAlignment="Top"
-                    HorizontalAlignment="Right"
-                    Margin="24,8"
                     ToolTip="Click to copy data in the Excel-friendly format.\n(Keep shift to copy row headers instead of values)"
                     IsEnabled="{Binding Text, Converter={StaticResource str2bool}, ElementName=txbSummary}"
                     Click="CopyButton_Click">
-                <ContentControl Template="{StaticResource CopySign}"/>
-            </Button>
-            <Label x:Name="lblCopied" Grid.Row="3"
-                   Margin="24,8"
+                    <ContentControl Template="{StaticResource CopySign}"/>
+                </Button>
+                <Label x:Name="lblCopied" Grid.Row="3"
                    Content="Copied"
-                   Visibility="Hidden"
-                   VerticalAlignment="Bottom"
-                   HorizontalAlignment="Right"/>
+                   Visibility="Hidden"/>
+            </StackPanel>
         </Grid>
 
         <Border Grid.Column="2"
@@ -296,6 +289,10 @@
                                 <Setter Property="Margin" Value="0,6"/>
                             </Style>
                         </StackPanel.Resources>
+
+                        <Label Style="{StaticResource PdHeader}"
+                               Content="Hand peak detector"/>
+
                         <Grid DataContext="{Binding Path=Processor.HandPeakDetector, Mode=OneTime}">
                             <Grid.RowDefinitions>
                                 <RowDefinition/>
@@ -303,41 +300,39 @@
                                 <RowDefinition/>
                                 <RowDefinition/>
                                 <RowDefinition/>
-                                <RowDefinition/>
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition/>
                                 <ColumnDefinition Width="60"/>
                             </Grid.ColumnDefinitions>
 
-                            <Label Grid.Row="0" Grid.ColumnSpan="2"
-                                   Style="{StaticResource PdHeader}"
-                                   Content="Hand peak detector"/>
+                            <Label Grid.Row="0" Grid.Column="0"
+                                    Content="Buffer size"/>
+                            <TextBox Grid.Row="0" Grid.Column="1"
+                                        Text="{Binding BufferSize, Mode=TwoWay}"/>
                             <Label Grid.Row="1" Grid.Column="0"
-                                   Content="Buffer size"/>
+                                    Content="Peak relative threshold"/>
                             <TextBox Grid.Row="1" Grid.Column="1"
-                                     Text="{Binding BufferSize, Mode=TwoWay}"/>
+                                        Text="{Binding PeakThreshold, Mode=TwoWay}"/>
                             <Label Grid.Row="2" Grid.Column="0"
-                                   Content="Peak relative threshold"/>
+                                    Content="Max peak duration (ms)"/>
                             <TextBox Grid.Row="2" Grid.Column="1"
-                                     Text="{Binding PeakThreshold, Mode=TwoWay}"/>
+                                        Text="{Binding MaxPeakDuration, Mode=TwoWay}"/>
                             <Label Grid.Row="3" Grid.Column="0"
-                                   Content="Max peak duration (ms)"/>
+                                    Content="Min inter-peak interval (ms)"/>
                             <TextBox Grid.Row="3" Grid.Column="1"
-                                     Text="{Binding MaxPeakDuration, Mode=TwoWay}"/>
+                                        Text="{Binding MinInterPeakInterval, Mode=TwoWay}"/>
                             <Label Grid.Row="4" Grid.Column="0"
-                                   Content="Min inter-peak interval (ms)"/>
-                            <TextBox Grid.Row="4" Grid.Column="1"
-                                     Text="{Binding MinInterPeakInterval, Mode=TwoWay}"/>
-                            <Label Grid.Row="5" Grid.Column="0"
-                                   Content="Peak direction"/>
-                            <ComboBox Grid.Row="5" Grid.Column="1"
-                                      ItemsSource="{Binding Source={StaticResource PeakDirectionProvider}}"
-                                      SelectedItem="{Binding Direction, Mode=TwoWay}"/>
+                                    Content="Peak direction"/>
+                            <ComboBox Grid.Row="4" Grid.Column="1"
+                                        ItemsSource="{Binding Source={StaticResource PeakDirectionProvider}}"
+                                        SelectedItem="{Binding Direction, Mode=TwoWay}"/>
                         </Grid>
 
                         <Separator/>
 
+                        <Label Style="{StaticResource PdHeader}"
+                               Content="Gaze peak detector"/>
                         <Grid DataContext="{Binding Path=Processor.GazePeakDetector, Mode=OneTime}">
                             <Grid.RowDefinitions>
                                 <RowDefinition/>
@@ -345,41 +340,39 @@
                                 <RowDefinition/>
                                 <RowDefinition/>
                                 <RowDefinition/>
-                                <RowDefinition/>
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition/>
                                 <ColumnDefinition Width="60"/>
                             </Grid.ColumnDefinitions>
 
-                            <Label Grid.Row="0" Grid.ColumnSpan="2"
-                                   Style="{StaticResource PdHeader}"
-                                   Content="Gaze peak detector"/>
-                            <Label Grid.Row="1" Grid.Column="0"
+                            <Label Grid.Row="0" Grid.Column="0"
                                    Content="Buffer size"/>
-                            <TextBox Grid.Row="1" Grid.Column="1"
+                            <TextBox Grid.Row="0" Grid.Column="1"
                                      Text="{Binding BufferSize, Mode=TwoWay}"/>
-                            <Label Grid.Row="2" Grid.Column="0"
+                            <Label Grid.Row="1" Grid.Column="0"
                                    Content="Peak relative threshold"/>
-                            <TextBox Grid.Row="2" Grid.Column="1"
+                            <TextBox Grid.Row="1" Grid.Column="1"
                                      Text="{Binding PeakThreshold, Mode=TwoWay}"/>
-                            <Label Grid.Row="3" Grid.Column="0"
+                            <Label Grid.Row="2" Grid.Column="0"
                                    Content="Max peak duration (ms)"/>
-                            <TextBox Grid.Row="3" Grid.Column="1"
+                            <TextBox Grid.Row="2" Grid.Column="1"
                                      Text="{Binding MaxPeakDuration, Mode=TwoWay}"/>
-                            <Label Grid.Row="4" Grid.Column="0"
+                            <Label Grid.Row="3" Grid.Column="0"
                                    Content="Min inter-peak interval (ms)"/>
-                            <TextBox Grid.Row="4" Grid.Column="1"
+                            <TextBox Grid.Row="3" Grid.Column="1"
                                      Text="{Binding MinInterPeakInterval, Mode=TwoWay}"/>
-                            <Label Grid.Row="5" Grid.Column="0"
+                            <Label Grid.Row="4" Grid.Column="0"
                                    Content="Peak direction"/>
-                            <ComboBox Grid.Row="5" Grid.Column="1"
+                            <ComboBox Grid.Row="4" Grid.Column="1"
                                       ItemsSource="{Binding Source={StaticResource PeakDirectionProvider}}"
                                       SelectedItem="{Binding Direction, Mode=TwoWay}"/>
                         </Grid>
 
                         <Separator/>
 
+                        <Label Style="{StaticResource PdHeader}"
+                               Content="Blink detector"/>
                         <Grid DataContext="{Binding Path=Processor.BlinkDetector, Mode=OneTime}">
                             <Grid.RowDefinitions>
                                 <RowDefinition/>
@@ -388,47 +381,44 @@
                                 <RowDefinition/>
                                 <RowDefinition/>
                                 <RowDefinition/>
-                                <RowDefinition/>
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition/>
                                 <ColumnDefinition Width="60"/>
                             </Grid.ColumnDefinitions>
 
-                            <Label Grid.Row="0" Grid.ColumnSpan="2"
-                                   Style="{StaticResource PdHeader}"
-                                   Content="Blink detector"/>
-                            <Label Grid.Row="1" Grid.Column="0"
+                            <Label Grid.Row="0" Grid.Column="0"
                                    Content="Min blink duration (ms)"/>
-                            <TextBox Grid.Row="1" Grid.Column="1"
+                            <TextBox Grid.Row="0" Grid.Column="1"
                                      Text="{Binding BlinkMinDuration, Mode=TwoWay}"/>
-                            <Label Grid.Row="2" Grid.Column="0"
+                            <Label Grid.Row="1" Grid.Column="0"
                                    Content="Max blink duration (ms)"/>
-                            <TextBox Grid.Row="2" Grid.Column="1"
+                            <TextBox Grid.Row="1" Grid.Column="1"
                                      Text="{Binding BlinkMaxDuration, Mode=TwoWay}"/>
-                            <Label Grid.Row="3" Grid.Column="0"
+                            <Label Grid.Row="2" Grid.Column="0"
                                    Content="Min gaze-lost duration (ms)"/>
-                            <TextBox Grid.Row="3" Grid.Column="1"
+                            <TextBox Grid.Row="2" Grid.Column="1"
                                      Text="{Binding MinGazeLostInterval, Mode=TwoWay}"/>
-                            <Label Grid.Row="4" Grid.Column="0"
+                            <Label Grid.Row="3" Grid.Column="0"
                                    Content="Max interval to collapse (ms)"/>
-                            <TextBox Grid.Row="4" Grid.Column="1"
+                            <TextBox Grid.Row="3" Grid.Column="1"
                                      Text="{Binding MergeInterval, Mode=TwoWay}"/>
-                            <Label Grid.Row="5" Grid.Column="0"
+                            <Label Grid.Row="4" Grid.Column="0"
                                    Content="Blink max level difference"/>
-                            <TextBox Grid.Row="5" Grid.Column="1"
+                            <TextBox Grid.Row="4" Grid.Column="1"
                                      Text="{Binding BlinkMaxLevelDifference, Mode=TwoWay}"/>
-                            <Label Grid.Row="6" Grid.Column="0"
+                            <Label Grid.Row="5" Grid.Column="0"
                                    Content="Level difference buffer size"/>
-                            <TextBox Grid.Row="6" Grid.Column="1"
+                            <TextBox Grid.Row="5" Grid.Column="1"
                                      Text="{Binding LevelDifferenceBufferSize, Mode=TwoWay}"/>
                         </Grid>
 
                         <Separator/>
 
+                        <Label Style="{StaticResource PdHeader}"
+                               Content="Other"/>
                         <Grid DataContext="{Binding Path=Settings, Mode=OneTime}">
                             <Grid.RowDefinitions>
-                                <RowDefinition/>
                                 <RowDefinition/>
                                 <RowDefinition/>
                             </Grid.RowDefinitions>
@@ -437,16 +427,13 @@
                                 <ColumnDefinition Width="60"/>
                             </Grid.ColumnDefinitions>
 
-                            <Label Grid.Row="0" Grid.ColumnSpan="2"
-                                   Style="{StaticResource PdHeader}"
-                                   Content="Other"/>
-                            <Label Grid.Row="1" Grid.Column="0"
+                            <Label Grid.Row="0" Grid.Column="0"
                                    Content="Max hand-gaze interval (ms)"/>
-                            <TextBox Grid.Row="1" Grid.Column="1"
+                            <TextBox Grid.Row="0" Grid.Column="1"
                                      Text="{Binding MaxHandGazeDelay, Mode=TwoWay}"/>
-                            <Label Grid.Row="2" Grid.Column="0"
+                            <Label Grid.Row="1" Grid.Column="0"
                                    Content="Quantile threshold"/>
-                            <TextBox Grid.Row="2" Grid.Column="1"
+                            <TextBox Grid.Row="1" Grid.Column="1"
                                      Text="{Binding QuantileThreshold, Mode=TwoWay}"/>
                         </Grid>
                     </StackPanel>

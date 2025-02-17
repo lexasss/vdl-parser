@@ -1,4 +1,6 @@
-﻿namespace VdlParser;
+﻿using VdlParser.Detectors;
+
+namespace VdlParser;
 
 public class Trial(Peak? handPeak, Peak? gazePeak, long startTimestamp, long responseTimestamp, bool isCorrect)
 {

@@ -1,4 +1,5 @@
 ﻿using MathNet.Numerics.Statistics;
+using VdlParser.Detectors;
 
 namespace VdlParser.Statistics;
 
@@ -19,9 +20,7 @@ public class Vdl(Processor processor) : IStatistics
         var glanceDurations = processor.GazePeaks.Select(peak => (double)(peak.TimestampEnd - peak.TimestampStart));
         var (glanceDurationMean, glanceDurationStd) = glanceDurations.MeanStandardDeviation();
         var (pupilSizeMean, pupilSizeStd) = processor.PupilSizes.MeanStandardDeviation();
-        var blinkCount = processor.GazeDataMisses
-            .Where(gdm => gdm.IsBlink)
-            .Count();
+        var blinkCount = processor.Blinks.Count();
         var longEyeLostCount = processor.GazeDataMisses
             .Where(gdm => gdm.IsLong)
             .Count();
