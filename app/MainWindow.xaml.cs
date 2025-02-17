@@ -5,14 +5,12 @@ using System.Windows.Input;
 
 namespace VdlParser;
 
-public partial class MainWindow : Window, INotifyPropertyChanged
+public partial class MainWindow : Window
 {
     public Vdls Vdls { get; } = new Vdls();
     public Processor Processor { get; } = new Processor();
     public Settings Settings { get; } = Settings.Instance;
-    public bool IsSettingsPanelVisible { get; set; } = true;
-
-    public event PropertyChangedEventHandler? PropertyChanged;
+    public UiState UiState { get; } = UiState.Load();
 
     public MainWindow()
     {
@@ -52,6 +50,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private void Window_Closed(object sender, EventArgs e)
     {
         Processor.SaveDetectors();
+        UiState.Save(UiState);
     }
 
     private void OpenButton_Click(object sender, RoutedEventArgs e)
@@ -124,9 +123,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void SettingShowHide_Click(object sender, RoutedEventArgs e)
     {
-        IsSettingsPanelVisible = !IsSettingsPanelVisible;
-        ((Button)sender).Content = IsSettingsPanelVisible ? "🠾" : "🠼";
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSettingsPanelVisible)));
+        UiState.IsSettingsPanelVisible = !UiState.IsSettingsPanelVisible;
+        ((Button)sender).Content = UiState.IsSettingsPanelVisible ? "🠾" : "🠼";
     }
 
     private void Vdls_KeyUp(object sender, KeyEventArgs e)

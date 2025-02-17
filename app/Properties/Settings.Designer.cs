@@ -154,5 +154,17 @@ namespace VdlParser.Properties {
                 this["BlinkDetector2"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string UiState {
+            get {
+                return ((string)(this["UiState"]));
+            }
+            set {
+                this["UiState"] = value;
+            }
+        }
     }
 }
