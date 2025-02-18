@@ -1,5 +1,6 @@
 ﻿using MathNet.Numerics.Statistics;
 using System.IO;
+using VdlParser.Statistics;
 
 namespace VdlParser;
 
@@ -27,6 +28,9 @@ public record class VdlRecord(
     Vector3D HandPalm, Vector3D HandThumb, Vector3D HandIndex, Vector3D HandMiddle,
     NBackTaskEvent? NBackTaskEvent)
 {
+    public double PupilOpenness => (LeftPupil.Openness + RightPupil.Openness) / 2;
+    public double PupilSize => (LeftPupil.Size + RightPupil.Size) / 2;
+
     public static VdlRecord? Parse(string? text)
     {
         if (string.IsNullOrEmpty(text))
@@ -91,16 +95,20 @@ public class PupilCalibration(double size)
 
 public class Vdl
 {
-    public string Name { get; }
+    public string Timestamp { get; }
+    public string Participant { get; }
+    public double Lambda { get; }
     public int RecordCount { get; }
 
     public VdlRecord[] Records { get; }
 
     public PupilCalibration? PupilCalibration { get; set; } = null;
 
-    public Vdl(string name, VdlRecord[] records)
+    public Vdl(string timestamp, string participant, double lambda, VdlRecord[] records)
     {
-        Name = name;
+        Timestamp = timestamp;
+        Participant = participant;
+        Lambda = lambda;
         RecordCount = records.Length;
 
         Records = records;
@@ -112,6 +120,9 @@ public class Vdl
         long tsHeadset = 0;
 
         System.Diagnostics.Debug.WriteLine($"Loading: {Path.GetFileName(filename)}");
+
+        var newCttFilename = Utils.GetCorrespondingNewCtt(filename);
+        var lambda = newCttFilename != null ? Utils.GetLambda(newCttFilename) : 0;
 
         var records = new List<VdlRecord>();
         using var reader = new StreamReader(filename);
@@ -140,7 +151,8 @@ public class Vdl
 
         System.Diagnostics.Debug.WriteLine($"Record count: {records.Count}");
 
-        var name = string.Join('-', Path.GetFileName(filename).Split('.')[0].Split('-')[1..]);
-        return records.Count > 0 ? new Vdl(name, records.ToArray()) : null;
+        var participant = Path.GetDirectoryName(filename)?.Split(Path.DirectorySeparatorChar)[^3] ?? "";
+        var timestamp = string.Join('-', Path.GetFileName(filename).Split('.')[0].Split('-')[1..]);
+        return records.Count > 0 ? new Vdl(timestamp, participant, lambda, records.ToArray()) : null;
     }
 }

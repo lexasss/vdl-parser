@@ -32,6 +32,15 @@ public class UiState : INotifyPropertyChanged
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(AreBlinkDetectorSettingsVisible)));
         }
     }
+    public bool AreBlinkDetector2SettingsVisible
+    {
+        get => _areBlinkDetector2SettingsVisible;
+        set
+        {
+            _areBlinkDetector2SettingsVisible = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(AreBlinkDetector2SettingsVisible)));
+        }
+    }
     public bool AreOtherSettingsVisible
     {
         get => _areOtherSettingsVisible;
@@ -94,6 +103,7 @@ public class UiState : INotifyPropertyChanged
     bool _areHandPeakDetectorSettingsVisible = true;
     bool _areGazePeakDetectorSettingsVisible = true;
     bool _areBlinkDetectorSettingsVisible = true;
+    bool _areBlinkDetector2SettingsVisible = true;
     bool _areOtherSettingsVisible = true;
     bool _isSettingsPanelVisible = true;
 }

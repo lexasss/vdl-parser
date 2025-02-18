@@ -1,5 +1,4 @@
 ﻿using MathNet.Numerics.Statistics;
-using VdlParser.Detectors;
 
 namespace VdlParser.Statistics;
 
@@ -20,7 +19,7 @@ public class Vdl(Processor processor) : IStatistics
         var glanceDurations = processor.GazePeaks.Select(peak => (double)(peak.TimestampEnd - peak.TimestampStart));
         var (glanceDurationMean, glanceDurationStd) = glanceDurations.MeanStandardDeviation();
         var (pupilSizeMean, pupilSizeStd) = processor.PupilSizes.MeanStandardDeviation();
-        var blinkCount = processor.Blinks.Count();
+        var blinkCount2 = processor.Blinks.Count();
         var longEyeLostCount = processor.GazeDataMisses
             .Where(gdm => gdm.IsLong)
             .Count();
@@ -35,6 +34,9 @@ public class Vdl(Processor processor) : IStatistics
             .Select(bid => bid.Mean).ToArray();
         var correctResponses = (double)processor.Trials.Sum(trial => trial.IsCorrect ? 1 : 0) / processor.Trials.Length;
         var calibratedPupilSizes = processor.PupilSizes.Select(size => size - (processor.Vdl?.PupilCalibration?.Size ?? 0));
+        var blinkCount = processor.GazeDataMisses
+            .Where(gdm => gdm.IsBlink)
+            .Count();
 
         var ql = Settings.Instance.QuantileThreshold;
         var qh = 1.0 - ql;
@@ -60,7 +62,7 @@ public class Vdl(Processor processor) : IStatistics
                 $"  calibrated mean = {calibratedPupilSizes.Mean():F2}",
                 $"  calibrated median = {calibratedPupilSizes.Median():F2} ({calibratedPupilSizes.Quantile(ql):F2}..{calibratedPupilSizes.Quantile(qh):F2})",
                 $"Gaze-lost events: {processor.GazeDataMisses.Length}",
-                $"  blinks: {blinkCount}",
+                $"  blinks: {blinkCount} or {blinkCount2}",
                 $"  eyes closed or lost: {longEyeLostCount}",
             ]);
         else if (format == Format.Rows || format == Format.RowHeaders)
@@ -98,6 +100,7 @@ public class Vdl(Processor processor) : IStatistics
                 ("Long eye losses", longEyeLostCount),
                 ("Correct responses, %", 100*correctResponses),
                 ("Calibrated pupil size, mean", pupilSizeMean - (processor.Vdl?.PupilCalibration?.Size ?? 0)),
+                ("Blinks 2", blinkCount2),
             ];
             return string.Join('\n', format == Format.RowHeaders ?
                 rows.Select(row => row.Item1) :

@@ -11,7 +11,11 @@ public class BlinkDetector2
 {
     public int BlinkMinDuration { get; set; } = 40; // ms
     public int BlinkMaxDuration { get; set; } = 350; // ms
-    public int BufferSize { get; set; } = 5;
+    public int BufferSize { get; set; } = 4;
+    public double ThresholdEyeRotation { get; set; } = -1.5;
+    public double ThresholdPupilOpenness { get; set; } = -0.1;
+    public double ThresholdPupilSize { get; set; } = -0.1;
+    public double ThresholdConfidence { get; set; } = 0.5;
 
     public static BlinkDetector2 Load()
     {
@@ -49,16 +53,44 @@ public class BlinkDetector2
 
     public Blink[] Find(VdlRecord[] samples)
     {
-        double PeakStrength(int index, double thresoholdLeft, double thresoholdRight, Func<VdlRecord, double> getData)
+        /*
+        double GetPeakConfidence(int index, double thresohold, Func<VdlRecord, double> getData, bool ignoreAfterPeak = false)
         {
             if ((index + BufferSize) >= samples.Length)
                 return 0;
 
-            var diffLeft = getData(samples[index - 1]) - getData(samples[index - BufferSize]);
-            var diffRight = getData(samples[index]) - getData(samples[index + BufferSize - 1]);
-            var a = diffLeft / thresoholdLeft * 1.75;
-            var b = diffRight / thresoholdRight * 1.75;
-            return Math.Max(0, Math.Min(a / Math.Sqrt(1 + a * a), b / Math.Sqrt(1 + b * b)));
+            var buffer = samples[(index - BufferSize)..(index + BufferSize)].Select(s => getData(s));
+
+            var start = buffer.Take(2).Mean();
+            var end = ignoreAfterPeak ? start : buffer.TakeLast(2).Mean();
+            var baseline = (start + end) / 2;
+            var min = buffer.Skip(2).Take(2 * BufferSize - 4).Min();
+
+            if (Math.Abs(start - end) > Math.Abs((baseline - min) * 0.5) ||
+                Math.Abs(start - min) < Math.Abs(thresohold) || 
+                (ignoreAfterPeak ? false : Math.Abs(end - min) < Math.Abs(thresohold)))
+                return 0;
+
+            var a = (min - baseline) / thresohold * 1.75;
+            return Math.Max(0, a / Math.Sqrt(1 + a * a));
+        }*/
+        double GetPeakConfidence(int index, double thresohold, Func<VdlRecord, double> getData, bool ignoreRight = false)
+        {
+            if ((index + BufferSize) >= samples.Length)
+                return 0;
+
+            var currentValue = getData(samples[index]);
+            var diffLeft = currentValue - getData(samples[index - BufferSize]);
+            var diffRight = ignoreRight ? diffLeft : currentValue - getData(samples[index + BufferSize]);
+
+            var diff = (diffLeft + diffRight) / 2;
+            var a = diff / thresohold;
+            var result = Math.Max(0, a / Math.Sqrt(1 + a * a));
+
+            if (diffLeft / diffRight < 0.3 || diffLeft / diffRight > 3)
+                return Math.Min(0.1, result);
+
+            return result;
         }
 
         var timestampSource = Settings.Instance.TimestampSource;
@@ -86,23 +118,27 @@ public class BlinkDetector2
             var sample = samples[i];
             var ts = GetTimestamp(sample);
             var interval = ts - lastTimestamp;
-            if (interval > BlinkMinDuration)
+            if (interval >= BlinkMinDuration && interval <= BlinkMaxDuration)
             {
-                var peakInGazeData = PeakStrength(i, -0.5, -2, GetEyeData);
-                var peakInPupilSize = PeakStrength(i, -0.1, -0.1, r => (r.LeftPupil.Size + r.RightPupil.Size) / 2);
-                var peakInPupilOpenness = PeakStrength(i, -0.15, -0.15, r => (r.LeftPupil.Openness + r.RightPupil.Openness) / 2);
+                var confOfPeakInGazeData = GetPeakConfidence(i, ThresholdEyeRotation, GetEyeData);
+                var confOfPeakInPupilSize = GetPeakConfidence(i, ThresholdPupilSize, r => r.PupilSize);
+                var confOfPeakInPupilOpenness = GetPeakConfidence(i, ThresholdPupilOpenness, r => r.PupilOpenness, ignoreRight: true);
 
-                var thresholds = new double[] { peakInGazeData, peakInPupilSize, peakInPupilOpenness };
-                if (thresholds.All(t => t > 0.4))
+                var debugMsg = "--------";
+                var confidences = new double[] { confOfPeakInGazeData, confOfPeakInPupilSize, confOfPeakInPupilOpenness };
+                if (confidences.All(t => t > ThresholdConfidence))
                 {
-                    peakInGazeData = PeakStrength(i, -0.5, -2, GetEyeData);
-                    peakInPupilSize = PeakStrength(i, -0.1, -0.1, r => (r.LeftPupil.Size + r.RightPupil.Size) / 2);
-                    peakInPupilOpenness = PeakStrength(i, -0.15, -0.15, r => (r.LeftPupil.Openness + r.RightPupil.Openness) / 2);
-                    System.Diagnostics.Debug.WriteLine($"[{i}] {ts} > {peakInGazeData} * {peakInPupilSize} * {peakInPupilOpenness}");
+                    confOfPeakInGazeData = GetPeakConfidence(i, ThresholdEyeRotation, GetEyeData);
+                    confOfPeakInPupilSize = GetPeakConfidence(i, ThresholdPupilSize, r => r.PupilSize);
+                    confOfPeakInPupilOpenness = GetPeakConfidence(i, ThresholdPupilOpenness, r => r.PupilOpenness, ignoreRight: true);
+
                     blinks.Add(new Blink(lastTimestamp, i - 1, ts, i, interval));
 
                     i += BufferSize;
+                    debugMsg = ">> blink";
                 }
+
+                System.Diagnostics.Debug.WriteLine($"[{i}] {ts} > Gap {interval} ms {debugMsg} {confOfPeakInGazeData:F3} * {confOfPeakInPupilSize:F3} * {confOfPeakInPupilOpenness:F3}");
             }
 
             lastTimestamp = ts;
