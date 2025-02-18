@@ -1,5 +1,4 @@
-﻿using System.ComponentModel;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
@@ -11,14 +10,15 @@ public partial class MainWindow : Window
     public Processor Processor { get; } = new Processor();
     public Settings Settings { get; } = Settings.Instance;
     public UiState UiState { get; } = UiState.Load();
+    public GraphSettings GraphSettings { get; } = GraphSettings.Load();
 
     public MainWindow()
     {
         InitializeComponent();
 
-        DataContext = this;
+        _graphRenderer = new GraphRenderer(graph, GraphSettings);
 
-        _graphRenderer = new GraphRenderer(graph);
+        GraphSettings.PropertyChanged += (s, e) => RefeedProcessor();
     }
 
     // Internal
@@ -35,7 +35,9 @@ public partial class MainWindow : Window
 
         if (_graphRenderer.Content == GraphContent.RawData)
         {
-            _graphRenderer.DisplayRawData(Processor.HandSamples, Processor.GazeSamples);
+            _graphRenderer.Reset();
+            _graphRenderer.AddRawData(Processor);
+            _graphRenderer.Render();
             txbSummary.Text = null;
         }
         else if (_graphRenderer.Content == GraphContent.Processed)
@@ -49,8 +51,9 @@ public partial class MainWindow : Window
 
     private void Window_Closed(object sender, EventArgs e)
     {
-        Processor.SaveDetectors();
-        UiState.Save(UiState);
+        Processor.SaveSettings();
+        UiState.Save();
+        GraphSettings.Save();
     }
 
     private void OpenButton_Click(object sender, RoutedEventArgs e)
@@ -85,7 +88,9 @@ public partial class MainWindow : Window
             if (vdl != null)
             {
                 Processor.Feed(vdl);
-                _graphRenderer.DisplayRawData(Processor.HandSamples, Processor.GazeSamples);
+                _graphRenderer.Reset();
+                _graphRenderer.AddRawData(Processor);
+                _graphRenderer.Render();
                 txbSummary.Text = null;
             }
         }

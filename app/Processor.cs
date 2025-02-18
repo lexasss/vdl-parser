@@ -28,6 +28,9 @@ public class Processor
 
     public Sample[] HandSamples { get; private set; } = [];
     public Sample[] GazeSamples { get; private set; } = [];
+    public Sample[] PupilSizeSamples { get; private set; } = [];
+    public Sample[] PupilOpennessSamples { get; private set; } = [];
+
     public Peak[] HandPeaks { get; private set; } = [];
     public Peak[] GazePeaks { get; private set; } = [];
     public Trial[] Trials { get; private set; } = [];
@@ -38,12 +41,12 @@ public class Processor
 
     public Vdl? Vdl { get; private set; } = null;
 
-    public void SaveDetectors()
+    public void SaveSettings()
     {
         PeakDetector.Save(DataSourceType.Hand, HandPeakDetector);
         PeakDetector.Save(DataSourceType.Gaze, GazePeakDetector);
-        BlinkDetector.Save(BlinkDetector);
-        BlinkDetector2.Save(BlinkDetector2);
+        BlinkDetector.Save();
+        BlinkDetector2.Save();
     }
 
     public void Feed(Vdl vdl)
@@ -53,6 +56,13 @@ public class Processor
         var records = Vdl.Records;
 
         (HandSamples, GazeSamples) = GetHandGazeSamples(records);
+
+        PupilSizeSamples = records
+            .Select(record => new Sample(GetTimestamp(record), record.PupilSize))
+            .ToArray();
+        PupilOpennessSamples = records
+            .Select(record => new Sample(GetTimestamp(record), record.PupilOpenness))
+            .ToArray();
 
         HandPeaks = HandPeakDetector.Find(HandSamples);
         GazePeaks = GazePeakDetector.Find(GazeSamples);

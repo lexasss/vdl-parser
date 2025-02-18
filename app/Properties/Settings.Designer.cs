@@ -166,5 +166,17 @@ namespace VdlParser.Properties {
                 this["UiState"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string Graph {
+            get {
+                return ((string)(this["Graph"]));
+            }
+            set {
+                this["Graph"] = value;
+            }
+        }
     }
 }

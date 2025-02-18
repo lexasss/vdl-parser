@@ -41,9 +41,9 @@ public class BlinkDetector
         return result ?? defaultDetector;
     }
 
-    public static void Save(BlinkDetector detector)
+    public void Save()
     {
-        var json = JsonSerializer.Serialize(detector);
+        var json = JsonSerializer.Serialize(this);
 
         var settings = Properties.Settings.Default;
         settings.BlinkDetector = json;

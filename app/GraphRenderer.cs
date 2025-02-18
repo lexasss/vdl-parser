@@ -1,4 +1,5 @@
-﻿using VdlParser.Detectors;
+﻿using System.Diagnostics.Eventing.Reader;
+using VdlParser.Detectors;
 
 namespace VdlParser;
 
@@ -9,7 +10,15 @@ public enum GraphContent
     Processed
 }
 
-public class GraphRenderer(Graph graph)
+public enum GraphCurve
+{
+    Gaze,
+    Hand,
+    PupilSize,
+    PupilOpenness
+}
+
+public class GraphRenderer(Graph graph, GraphSettings graphSettings)
 {
     public GraphContent Content { get; set; } = GraphContent.Empty;
 
@@ -19,17 +28,33 @@ public class GraphRenderer(Graph graph)
         Content = GraphContent.Empty;
     }
 
-    public void DisplayRawData(Sample[] handSamples, Sample[] gazeSamples)
+    public void Render()
     {
-        _graph.Reset();
-        _graph.AddCurve(handSamples, COLOR_HAND, "Hand");
-        _graph.AddCurve(gazeSamples, COLOR_GAZE, "Gaze");
         _graph.Render();
+    }
+
+    public void AddRawData(Sample[] samples, GraphCurve curve)
+    {
+        var (color, label) = GetCurveProps(curve);
+        if (curve == GraphCurve.Gaze || curve == GraphCurve.Hand)
+            _graph.AddCurve(samples, color, label);
+        else
+            _graph.AddCurve2(samples, color, label);
 
         if (Content != GraphContent.Processed)
         {
             Content = GraphContent.RawData;
         }
+    }
+
+    public void AddRawData(Processor processor)
+    {
+        AddRawData(processor.HandSamples, GraphCurve.Hand);
+        AddRawData(processor.GazeSamples, GraphCurve.Gaze);
+        if (_graphSettings.HasPupilSize)
+            AddRawData(processor.PupilSizeSamples, GraphCurve.PupilSize);
+        if (_graphSettings.HasPupilOpenness)
+            AddRawData(processor.PupilOpennessSamples, GraphCurve.PupilOpenness);
     }
 
     public void DisplayProcessedData(Processor processor)
@@ -49,8 +74,7 @@ public class GraphRenderer(Graph graph)
             _graph.Plot.AddHorizontalSpan(blink.StartTimestamp, blink.EndTimestamp, COLOR_BLINK, label: EnsureSingle("Blink"));
         }
 
-        _graph.AddCurve(processor.HandSamples, COLOR_HAND, "Hand");
-        _graph.AddCurve(processor.GazeSamples, COLOR_GAZE, "Gaze");
+        AddRawData(processor);
 
         foreach (var peak in processor.HandPeaks)
         {
@@ -82,9 +106,21 @@ public class GraphRenderer(Graph graph)
 
     readonly System.Drawing.Color COLOR_HAND = System.Drawing.Color.Blue;
     readonly System.Drawing.Color COLOR_GAZE = System.Drawing.Color.Red;
+    readonly System.Drawing.Color COLOR_PUPIL_SIZE = System.Drawing.Color.Purple;
+    readonly System.Drawing.Color COLOR_PUPIL_OPENNESS = System.Drawing.Color.MediumPurple;
     readonly System.Drawing.Color COLOR_BLINK = System.Drawing.Color.LightGray;
 
     readonly Graph _graph = graph;
+    readonly GraphSettings _graphSettings = graphSettings;
+
+    (System.Drawing.Color, string) GetCurveProps(GraphCurve curve) => curve switch
+    {
+        GraphCurve.Gaze => (COLOR_GAZE, "Gaze"),
+        GraphCurve.Hand => (COLOR_HAND, "Hand"),
+        GraphCurve.PupilSize => (COLOR_PUPIL_SIZE, "Pupil size"),
+        GraphCurve.PupilOpenness => (COLOR_PUPIL_OPENNESS, "Pupil openness"),
+        _ => (System.Drawing.Color.Black, "")
+    };
 
     private System.Drawing.Color NBackTaskEventColor(NBackTaskEventType type) => type switch
     {

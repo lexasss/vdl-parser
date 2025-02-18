@@ -117,9 +117,9 @@ public class UiState : INotifyPropertyChanged
         return result ?? defaultUiState;
     }
 
-    public static void Save(UiState detector)
+    public void Save()
     {
-        var json = JsonSerializer.Serialize(detector);
+        var json = JsonSerializer.Serialize(this);
 
         var settings = Properties.Settings.Default;
         settings.UiState = json;
