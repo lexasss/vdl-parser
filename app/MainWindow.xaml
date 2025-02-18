@@ -93,7 +93,7 @@
                     BorderBrush="Gray">
                 <StackPanel Background="#FFEDEDFF">
                     <Label Style="{StaticResource VdlHeader}"
-                           Content="{Binding Name}"/>
+                           Content="{Binding Timestamp}"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition/>
@@ -177,11 +177,13 @@
         </Grid>
 
 
-        <Grid Grid.Column="1">
+        <Grid Grid.Column="1" x:Name="g">
             <Grid.RowDefinitions>
-                <RowDefinition Height="2*"/>
+                <RowDefinition Height="{Binding Path=UiState.GraphHeight, Mode=TwoWay}"
+                               MinHeight="160"/>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="1*"/>
+                <RowDefinition Height="{Binding Path=UiState.StatisticsHeight, Mode=TwoWay}"
+                               MinHeight="80"/>
             </Grid.RowDefinitions>
 
             <local:Graph x:Name="graph"

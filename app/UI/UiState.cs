@@ -1,5 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Windows;
 
 namespace VdlParser;
 
@@ -60,6 +62,32 @@ public class UiState : INotifyPropertyChanged
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSettingsPanelVisible)));
         }
     }
+
+    [JsonIgnore]
+    public GridLength GraphHeight
+    {
+        get => new GridLength(GraphHeightInPixels, GridUnitType.Star);
+        set
+        {
+            GraphHeightInPixels = value.Value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(GraphHeight)));
+        }
+    }
+
+    [JsonIgnore]
+    public GridLength StatisticsHeight
+    {
+        get => new GridLength(StatisticsHeightInPixels, GridUnitType.Star);
+        set
+        {
+            StatisticsHeightInPixels = value.Value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(StatisticsHeight)));
+        }
+    }
+
+    public double GraphHeightInPixels { get; set; } = 2;
+
+    public double StatisticsHeightInPixels { get; set; } = 1;
 
 
     public event PropertyChangedEventHandler? PropertyChanged;
