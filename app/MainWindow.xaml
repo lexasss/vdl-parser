@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:local="clr-namespace:VdlParser"
+        xmlns:models="clr-namespace:VdlParser.Models"
         xmlns:det="clr-namespace:VdlParser.Detectors"
         mc:Ignorable="d"
         DataContext="{Binding Mode=OneWay, RelativeSource={RelativeSource Self}}"
@@ -63,7 +64,7 @@
             </Grid>
         </ControlTemplate>
 
-        <DataTemplate x:Key="VdlItem" DataType="local:Vdl">
+        <DataTemplate x:Key="VdlItem" DataType="models:Vdl">
             <Border BorderThickness="1"
                     BorderBrush="Gray">
                 <StackPanel Background="#FFEDEDED">
@@ -89,7 +90,7 @@
             </Border>
         </DataTemplate>
 
-        <DataTemplate x:Key="VdlSelectedItem" DataType="local:Vdl">
+        <DataTemplate x:Key="VdlSelectedItem" DataType="models:Vdl">
             <Border BorderThickness="1"
                     BorderBrush="Gray">
                 <StackPanel Background="#FFEDEDFF">
@@ -463,7 +464,7 @@
 
                             <Separator/>
 
-                            <Expander Header="Blink 2 detector"
+                            <Expander Header="Blink detector 2"
                                       IsExpanded="{Binding Path=UiState.AreBlinkDetector2SettingsVisible, Mode=TwoWay}">
                                 <Grid DataContext="{Binding Path=Processor.BlinkDetector2, Mode=OneTime}">
                                     <Grid.RowDefinitions>

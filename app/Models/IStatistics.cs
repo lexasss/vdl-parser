@@ -1,4 +1,4 @@
-﻿namespace VdlParser.Statistics;
+﻿namespace VdlParser.Models;
 
 public enum Format
 {

@@ -1,9 +1,9 @@
 ﻿using MathNet.Numerics.Statistics;
 using System.IO;
 
-namespace VdlParser.Statistics;
+namespace VdlParser.Models;
 
-public record class NtbRecord(int target, int? Response, bool IsCorrect, int? Delay, int TouchCount);
+public record class NtbRecord(int Target, int? Response, bool IsCorrect, int? Delay, int TouchCount);
 
 /// <summary>
 /// N-Back task log data
@@ -19,14 +19,14 @@ public class Nbt(string filename, int participantId, bool isNewCtt, bool isVr, d
     {
         var id = int.Parse(string.Join("", filename.Split(Path.DirectorySeparatorChar)[^3].Skip(1)) ?? "0");
         var newCttFilename = Utils.GetCorrespondingNewCtt(filename);
-        var isVr = newCttFilename != null ? CttNew.IsVR(newCttFilename) : false;
+        var isVr = newCttFilename != null && CttNew.IsVR(newCttFilename);
         var lambda = newCttFilename != null ? Utils.GetLambda(newCttFilename) : 0;
 
         try
         {
             return new Nbt(Path.GetFileName(filename), id, newCttFilename != null, isVr, lambda, File
                 .ReadAllLines(filename)
-                .SkipWhile(line => !line.StartsWith("#"))
+                .SkipWhile(line => !line.StartsWith('#'))
                 .Skip(2)
                 .Skip(App.TRAINING_TRIAL_COUNT)
                 .Select(line =>

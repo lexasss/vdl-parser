@@ -38,7 +38,7 @@ public partial class Graph : UserControl, INotifyPropertyChanged
         chart.Plot.YAxis.Line(false);
 
         chart.Plot.XAxis2.Hide();
-        //chart.Plot.YAxis2.Hide();
+
         chart.Plot.RightAxis.Line(false);
         chart.Plot.RightAxis.Ticks(true);
         chart.Plot.RightAxis.IsVisible = true;

@@ -1,6 +1,6 @@
 ﻿using VdlParser.Detectors;
 
-namespace VdlParser;
+namespace VdlParser.Models;
 
 public class Trial(Peak? handPeak, Peak? gazePeak, long startTimestamp, long responseTimestamp, bool isCorrect)
 {
@@ -17,8 +17,7 @@ public class Trial(Peak? handPeak, Peak? gazePeak, long startTimestamp, long res
     {
         var result = new List<Trial>();
 
-        Settings settings = Settings.Instance;
-
+        GeneralSettings settings = GeneralSettings.Instance;
 
         long timestampStart = 0;
         long timestampResponse = 0;

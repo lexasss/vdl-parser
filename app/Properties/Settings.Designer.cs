@@ -26,18 +26,6 @@ namespace VdlParser.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string LogFolder {
-            get {
-                return ((string)(this["LogFolder"]));
-            }
-            set {
-                this["LogFolder"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
         public string HandPeakDetector {
             get {
                 return ((string)(this["HandPeakDetector"]));
@@ -61,42 +49,6 @@ namespace VdlParser.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("0")]
-        public int HandDataSource {
-            get {
-                return ((int)(this["HandDataSource"]));
-            }
-            set {
-                this["HandDataSource"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("0")]
-        public int GazeDataSource {
-            get {
-                return ((int)(this["GazeDataSource"]));
-            }
-            set {
-                this["GazeDataSource"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("1500")]
-        public int MaxHandGazeDelay {
-            get {
-                return ((int)(this["MaxHandGazeDelay"]));
-            }
-            set {
-                this["MaxHandGazeDelay"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("")]
         public string BlinkDetector {
             get {
@@ -104,42 +56,6 @@ namespace VdlParser.Properties {
             }
             set {
                 this["BlinkDetector"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("0")]
-        public int BlinkShape {
-            get {
-                return ((int)(this["BlinkShape"]));
-            }
-            set {
-                this["BlinkShape"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("0")]
-        public int TimestampSource {
-            get {
-                return ((int)(this["TimestampSource"]));
-            }
-            set {
-                this["TimestampSource"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("0.1")]
-        public double QuantileThreshold {
-            get {
-                return ((double)(this["QuantileThreshold"]));
-            }
-            set {
-                this["QuantileThreshold"] = value;
             }
         }
         
@@ -176,6 +92,18 @@ namespace VdlParser.Properties {
             }
             set {
                 this["Graph"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string General {
+            get {
+                return ((string)(this["General"]));
+            }
+            set {
+                this["General"] = value;
             }
         }
     }

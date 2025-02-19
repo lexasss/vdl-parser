@@ -1,13 +1,11 @@
-﻿using System.Text.Json;
-
-namespace VdlParser.Detectors;
+﻿namespace VdlParser.Detectors;
 
 public record class GazeDataMiss(
     long StartTimestamp, int StartIndex,
     long EndTimestamp, int EndIndex,
     long Duration, bool IsBlink, bool IsLong);
 
-public class BlinkDetector
+public class BlinkDetector : ISettings
 {
     public int MinGazeLostInterval { get; set; } = 40; // ms
     public int BlinkMinDuration { get; set; } = 120; // ms
@@ -16,39 +14,7 @@ public class BlinkDetector
     public double BlinkMaxLevelDifference { get; set; } = 6;
     public int LevelDifferenceBufferSize { get; set; } = 3;
 
-    public static BlinkDetector Load()
-    {
-        var settings = Properties.Settings.Default;
-        string json = settings.BlinkDetector;
-
-        var defaultDetector = new BlinkDetector();
-
-        if (string.IsNullOrEmpty(json))
-        {
-            return defaultDetector;
-        }
-
-        BlinkDetector? result = null;
-        try
-        {
-            result = JsonSerializer.Deserialize<BlinkDetector>(json);
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine(ex.Message);
-        }
-
-        return result ?? defaultDetector;
-    }
-
-    public void Save()
-    {
-        var json = JsonSerializer.Serialize(this);
-
-        var settings = Properties.Settings.Default;
-        settings.BlinkDetector = json;
-        settings.Save();
-    }
+    public string Section => nameof(BlinkDetector);
 
     public GazeDataMiss[] Find(Sample[] samples)
     {

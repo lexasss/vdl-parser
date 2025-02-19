@@ -1,9 +1,8 @@
 ﻿using System.ComponentModel;
-using System.Text.Json;
 
 namespace VdlParser;
 
-public class GraphSettings : INotifyPropertyChanged
+public class GraphSettings : INotifyPropertyChanged, ISettings
 {
     public bool HasPupilSize
     {
@@ -24,41 +23,9 @@ public class GraphSettings : INotifyPropertyChanged
         }
     }
 
+    public string Section => "Graph";
+
     public event PropertyChangedEventHandler? PropertyChanged;
-
-    public static GraphSettings Load()
-    {
-        var settings = Properties.Settings.Default;
-        string json = settings.Graph;
-
-        var defaultSettings = new GraphSettings();
-
-        if (string.IsNullOrEmpty(json))
-        {
-            return defaultSettings;
-        }
-
-        GraphSettings? result = null;
-        try
-        {
-            result = JsonSerializer.Deserialize<GraphSettings>(json);
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine(ex.Message);
-        }
-
-        return result ?? defaultSettings;
-    }
-
-    public void Save()
-    {
-        var json = JsonSerializer.Serialize(this);
-
-        var settings = Properties.Settings.Default;
-        settings.Graph = json;
-        settings.Save();
-    }
 
     // Internal
 

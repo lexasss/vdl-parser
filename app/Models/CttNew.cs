@@ -1,7 +1,7 @@
 ﻿using MathNet.Numerics.Statistics;
 using System.IO;
 
-namespace VdlParser.Statistics;
+namespace VdlParser.Models;
 
 public record class CttNewRecord(long Timestamp, double Lambda, double LineOffset, double Input);
 

@@ -1,5 +1,5 @@
-﻿using System.Diagnostics.Eventing.Reader;
-using VdlParser.Detectors;
+﻿using VdlParser.Detectors;
+using VdlParser.Models;
 
 namespace VdlParser;
 

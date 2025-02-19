@@ -1,6 +1,6 @@
 ﻿using System.IO;
 using System.Windows;
-using VdlParser.Statistics;
+using VdlParser.Models;
 
 namespace VdlParser;
 

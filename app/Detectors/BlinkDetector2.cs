@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+﻿using VdlParser.Models;
 
 namespace VdlParser.Detectors;
 
@@ -7,7 +7,7 @@ public record class Blink(
     long EndTimestamp, int EndIndex,
     long Duration);
 
-public class BlinkDetector2
+public class BlinkDetector2 : ISettings
 {
     public int BlinkMinDuration { get; set; } = 40; // ms
     public int BlinkMaxDuration { get; set; } = 350; // ms
@@ -17,39 +17,7 @@ public class BlinkDetector2
     public double ThresholdPupilSize { get; set; } = -0.1;
     public double ThresholdConfidence { get; set; } = 0.5;
 
-    public static BlinkDetector2 Load()
-    {
-        var settings = Properties.Settings.Default;
-        string json = settings.BlinkDetector2;
-
-        var defaultDetector = new BlinkDetector2();
-
-        if (string.IsNullOrEmpty(json))
-        {
-            return defaultDetector;
-        }
-
-        BlinkDetector2? result = null;
-        try
-        {
-            result = JsonSerializer.Deserialize<BlinkDetector2>(json);
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine(ex.Message);
-        }
-
-        return result ?? defaultDetector;
-    }
-
-    public void Save()
-    {
-        var json = JsonSerializer.Serialize(this);
-
-        var settings = Properties.Settings.Default;
-        settings.BlinkDetector2 = json;
-        settings.Save();
-    }
+    public string Section => nameof(BlinkDetector2);
 
     public Blink[] Find(VdlRecord[] samples)
     {
@@ -93,8 +61,8 @@ public class BlinkDetector2
             return result;
         }
 
-        var timestampSource = Settings.Instance.TimestampSource;
-        var gazeDataSource = Settings.Instance.GazeDataSource;
+        var timestampSource = GeneralSettings.Instance.TimestampSource;
+        var gazeDataSource = GeneralSettings.Instance.GazeDataSource;
 
         long GetTimestamp(VdlRecord record) => timestampSource switch
         {

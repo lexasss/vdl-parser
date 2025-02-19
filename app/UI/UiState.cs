@@ -1,11 +1,10 @@
 ﻿using System.ComponentModel;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows;
 
 namespace VdlParser;
 
-public class UiState : INotifyPropertyChanged
+public class UiState : INotifyPropertyChanged, ISettings
 {
     public bool AreHandPeakDetectorSettingsVisible
     { 
@@ -89,42 +88,9 @@ public class UiState : INotifyPropertyChanged
 
     public double StatisticsHeightInPixels { get; set; } = 1;
 
+    public string Section => nameof(UiState);
 
     public event PropertyChangedEventHandler? PropertyChanged;
-
-    public static UiState Load()
-    {
-        var settings = Properties.Settings.Default;
-        string json = settings.UiState;
-
-        var defaultUiState = new UiState();
-
-        if (string.IsNullOrEmpty(json))
-        {
-            return defaultUiState;
-        }
-
-        UiState? result = null;
-        try
-        {
-            result = JsonSerializer.Deserialize<UiState>(json);
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine(ex.Message);
-        }
-
-        return result ?? defaultUiState;
-    }
-
-    public void Save()
-    {
-        var json = JsonSerializer.Serialize(this);
-
-        var settings = Properties.Settings.Default;
-        settings.UiState = json;
-        settings.Save();
-    }
 
     // Internal
 

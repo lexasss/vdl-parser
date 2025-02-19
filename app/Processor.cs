@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using VdlParser.Detectors;
+using VdlParser.Models;
 
 namespace VdlParser;
 
@@ -21,10 +22,10 @@ public record class TimestampedNbtEvent(long Timestamp, NBackTaskEvent Event);
 
 public class Processor
 {
-    public PeakDetector HandPeakDetector { get; } = PeakDetector.Load(DataSourceType.Hand);
-    public PeakDetector GazePeakDetector { get; } = PeakDetector.Load(DataSourceType.Gaze);
-    public BlinkDetector BlinkDetector { get; } = BlinkDetector.Load();
-    public BlinkDetector2 BlinkDetector2 { get; } = BlinkDetector2.Load();
+    public HandPeakDetector HandPeakDetector { get; } = Storage.Load<HandPeakDetector>();
+    public GazePeakDetector GazePeakDetector { get; } = Storage.Load<GazePeakDetector>();
+    public BlinkDetector BlinkDetector { get; } = Storage.Load<BlinkDetector>();
+    public BlinkDetector2 BlinkDetector2 { get; } = Storage.Load<BlinkDetector2>();
 
     public Sample[] HandSamples { get; private set; } = [];
     public Sample[] GazeSamples { get; private set; } = [];
@@ -43,10 +44,10 @@ public class Processor
 
     public void SaveSettings()
     {
-        PeakDetector.Save(DataSourceType.Hand, HandPeakDetector);
-        PeakDetector.Save(DataSourceType.Gaze, GazePeakDetector);
-        BlinkDetector.Save();
-        BlinkDetector2.Save();
+        Storage.Save(HandPeakDetector);
+        Storage.Save(GazePeakDetector);
+        Storage.Save(BlinkDetector);
+        Storage.Save(BlinkDetector2);
     }
 
     public void Feed(Vdl vdl)
@@ -86,9 +87,9 @@ public class Processor
 
     // Internal
 
-    static readonly Settings _settings = Settings.Instance;
+    static readonly GeneralSettings _settings = GeneralSettings.Instance;
 
-    public static (Sample[], Sample[]) GetHandGazeSamples(VdlRecord[] records)
+    private static (Sample[], Sample[]) GetHandGazeSamples(VdlRecord[] records)
     {
         return (
             _settings.HandDataSource switch

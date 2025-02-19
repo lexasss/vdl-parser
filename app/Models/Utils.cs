@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace VdlParser.Statistics;
+namespace VdlParser.Models;
 
 internal static class Utils
 {

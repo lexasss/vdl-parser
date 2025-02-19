@@ -2,35 +2,14 @@
 <SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="VdlParser.Properties" GeneratedClassName="Settings">
   <Profiles />
   <Settings>
-    <Setting Name="LogFolder" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
-    </Setting>
     <Setting Name="HandPeakDetector" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
     <Setting Name="GazePeakDetector" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
-    <Setting Name="HandDataSource" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">0</Value>
-    </Setting>
-    <Setting Name="GazeDataSource" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">0</Value>
-    </Setting>
-    <Setting Name="MaxHandGazeDelay" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">1500</Value>
-    </Setting>
     <Setting Name="BlinkDetector" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
-    </Setting>
-    <Setting Name="BlinkShape" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">0</Value>
-    </Setting>
-    <Setting Name="TimestampSource" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">0</Value>
-    </Setting>
-    <Setting Name="QuantileThreshold" Type="System.Double" Scope="User">
-      <Value Profile="(Default)">0.1</Value>
     </Setting>
     <Setting Name="BlinkDetector2" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
@@ -39,6 +18,9 @@
       <Value Profile="(Default)" />
     </Setting>
     <Setting Name="Graph" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="General" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
   </Settings>

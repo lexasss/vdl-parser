@@ -8,9 +8,9 @@ public partial class MainWindow : Window
 {
     public Vdls Vdls { get; } = new Vdls();
     public Processor Processor { get; } = new Processor();
-    public Settings Settings { get; } = Settings.Instance;
-    public UiState UiState { get; } = UiState.Load();
-    public GraphSettings GraphSettings { get; } = GraphSettings.Load();
+    public GeneralSettings Settings { get; } = GeneralSettings.Instance;
+    public UiState UiState { get; } = Storage.Load<UiState>();
+    public GraphSettings GraphSettings { get; } = Storage.Load<GraphSettings>();
 
     public MainWindow()
     {
@@ -24,7 +24,7 @@ public partial class MainWindow : Window
     // Internal
 
     GraphRenderer _graphRenderer;
-    Statistics.IStatistics[] _statistics = []; // log data other than VDL
+    Models.IStatistics[] _statistics = []; // log data other than VDL
 
     private void RefeedProcessor()
     {
@@ -43,7 +43,7 @@ public partial class MainWindow : Window
         else if (_graphRenderer.Content == GraphContent.Processed)
         {
             _graphRenderer.DisplayProcessedData(Processor);
-            txbSummary.Text = new Statistics.Vdl(Processor).Get(Statistics.Format.List);
+            txbSummary.Text = new Models.VdlStatistics(Processor).Get(Models.Format.List);
         }
     }
 
@@ -52,8 +52,8 @@ public partial class MainWindow : Window
     private void Window_Closed(object sender, EventArgs e)
     {
         Processor.SaveSettings();
-        UiState.Save();
-        GraphSettings.Save();
+        Storage.Save(UiState);
+        Storage.Save(GraphSettings);
     }
 
     private void OpenButton_Click(object sender, RoutedEventArgs e)
@@ -75,7 +75,7 @@ public partial class MainWindow : Window
 
             Vdls.Add(vdlList);
 
-            var summary = _statistics.Select(statistics => string.Join('\n', statistics.Get(Statistics.Format.List)));
+            var summary = _statistics.Select(statistics => string.Join('\n', statistics.Get(Models.Format.List)));
             txbSummary.Text = string.Join("\n\n", summary);
         }
     }
@@ -84,7 +84,7 @@ public partial class MainWindow : Window
     {
         if (e.AddedItems.Count > 0)
         {
-            var vdl = e.AddedItems[0] as Vdl;
+            var vdl = e.AddedItems[0] as Models.Vdl;
             if (vdl != null)
             {
                 Processor.Feed(vdl);
@@ -108,7 +108,7 @@ public partial class MainWindow : Window
 
         Processor.Feed(Vdls.SelectedItem);
         _graphRenderer.DisplayProcessedData(Processor);
-        txbSummary.Text = new Statistics.Vdl(Processor).Get(Statistics.Format.List);
+        txbSummary.Text = new Models.VdlStatistics(Processor).Get(Models.Format.List);
     }
 
     private void TimestampSource_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -147,7 +147,7 @@ public partial class MainWindow : Window
         if (!string.IsNullOrEmpty(txbSummary.Text))
         {
             var statistics = Vdls.SelectedItem != null
-                ? [new Statistics.Vdl(Processor)]
+                ? [new Models.VdlStatistics(Processor)]
                 : _statistics;
 
             var wasCopied = Controller.CopySummaryToClipboard(statistics,

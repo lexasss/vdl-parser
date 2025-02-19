@@ -1,6 +1,5 @@
 ﻿using MathNet.Numerics.Statistics;
 using System.ComponentModel;
-using System.Text.Json;
 
 namespace VdlParser.Detectors;
 
@@ -19,6 +18,17 @@ public enum PeakDirection
     Downward
 }
 
+public class HandPeakDetector : PeakDetector, ISettings
+{
+    public string Section => nameof(HandPeakDetector);
+}
+
+public class GazePeakDetector : PeakDetector, ISettings
+{
+    public string Section => nameof(GazePeakDetector);
+    public GazePeakDetector() { IgnoranceThrehold = -1000; }
+}
+
 public class PeakDetector : INotifyPropertyChanged
 {
     public int BufferSize
@@ -34,7 +44,7 @@ public class PeakDetector : INotifyPropertyChanged
     public PeakDirection Direction { get; set; } = PeakDirection.Upward;
 
     public event PropertyChangedEventHandler? PropertyChanged;
-
+    /*
     public static PeakDetector Load(DataSourceType dataSourceType)
     {
         var settings = Properties.Settings.Default;
@@ -85,7 +95,7 @@ public class PeakDetector : INotifyPropertyChanged
         }
 
         settings.Save();
-    }
+    }*/
 
     public Peak[] Find(Sample[] samples)
     {

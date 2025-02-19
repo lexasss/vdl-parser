@@ -1,8 +1,8 @@
 ﻿using MathNet.Numerics.Statistics;
 
-namespace VdlParser.Statistics;
+namespace VdlParser.Models;
 
-public class Vdl(Processor processor) : IStatistics
+public class VdlStatistics(Processor processor) : IStatistics
 {
     public string Get(Format format)
     {
@@ -38,7 +38,7 @@ public class Vdl(Processor processor) : IStatistics
             .Where(gdm => gdm.IsBlink)
             .Count();
 
-        var ql = Settings.Instance.QuantileThreshold;
+        var ql = GeneralSettings.Instance.QuantileThreshold;
         var qh = 1.0 - ql;
 
         if (format == Format.List)
