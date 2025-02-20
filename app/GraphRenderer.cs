@@ -18,7 +18,7 @@ public enum GraphCurve
     PupilOpenness
 }
 
-public class GraphRenderer(Graph graph, GraphSettings graphSettings)
+public class GraphRenderer(Controls.Graph graph, GraphSettings graphSettings)
 {
     public GraphContent Content { get; set; } = GraphContent.Empty;
 
@@ -110,7 +110,7 @@ public class GraphRenderer(Graph graph, GraphSettings graphSettings)
     readonly System.Drawing.Color COLOR_PUPIL_OPENNESS = System.Drawing.Color.MediumPurple;
     readonly System.Drawing.Color COLOR_BLINK = System.Drawing.Color.LightGray;
 
-    readonly Graph _graph = graph;
+    readonly Controls.Graph _graph = graph;
     readonly GraphSettings _graphSettings = graphSettings;
 
     (System.Drawing.Color, string) GetCurveProps(GraphCurve curve) => curve switch

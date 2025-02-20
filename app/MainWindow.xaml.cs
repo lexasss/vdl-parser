@@ -31,7 +31,7 @@ public partial class MainWindow : Window
         if (Vdls.SelectedItem == null)
             return;
 
-        Processor.Feed(Vdls.SelectedItem);
+        Processor.SetVdl(Vdls.SelectedItem);
 
         if (_graphRenderer.Content == GraphContent.RawData)
         {
@@ -42,6 +42,8 @@ public partial class MainWindow : Window
         }
         else if (_graphRenderer.Content == GraphContent.Processed)
         {
+            Processor.Process();
+
             _graphRenderer.DisplayProcessedData(Processor);
             txbSummary.Text = new Models.VdlStatistics(Processor).Get(Models.Format.List);
         }
@@ -87,7 +89,7 @@ public partial class MainWindow : Window
             var vdl = e.AddedItems[0] as Models.Vdl;
             if (vdl != null)
             {
-                Processor.Feed(vdl);
+                Processor.SetVdl(vdl);
                 _graphRenderer.Reset();
                 _graphRenderer.AddRawData(Processor);
                 _graphRenderer.Render();
@@ -103,10 +105,7 @@ public partial class MainWindow : Window
 
     private void Analyze_Click(object sender, RoutedEventArgs e)
     {
-        if (Vdls.SelectedItem == null)
-            return;
-
-        Processor.Feed(Vdls.SelectedItem);
+        Processor.Process();
         _graphRenderer.DisplayProcessedData(Processor);
         txbSummary.Text = new Models.VdlStatistics(Processor).Get(Models.Format.List);
     }

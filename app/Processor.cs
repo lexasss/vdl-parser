@@ -50,13 +50,14 @@ public class Processor
         Storage.Save(BlinkDetector2);
     }
 
-    public void Feed(Vdl vdl)
+    public void SetVdl(Vdl vdl)
     {
         Vdl = vdl;
 
         var records = Vdl.Records;
 
-        (HandSamples, GazeSamples) = GetHandGazeSamples(records);
+        HandSamples = GetHandSamples(records);
+        GazeSamples = GetGazeSamples(records);
 
         PupilSizeSamples = records
             .Select(record => new Sample(GetTimestamp(record), record.PupilSize))
@@ -64,6 +65,14 @@ public class Processor
         PupilOpennessSamples = records
             .Select(record => new Sample(GetTimestamp(record), record.PupilOpenness))
             .ToArray();
+    }
+
+    public void Process()
+    {
+        if (Vdl == null)
+            return;
+
+        var records = Vdl.Records;
 
         HandPeaks = HandPeakDetector.Find(HandSamples);
         GazePeaks = GazePeakDetector.Find(GazeSamples);
@@ -89,31 +98,27 @@ public class Processor
 
     static readonly GeneralSettings _settings = GeneralSettings.Instance;
 
-    private static (Sample[], Sample[]) GetHandGazeSamples(VdlRecord[] records)
+    private static Sample[] GetHandSamples(VdlRecord[] records) => _settings.HandDataSource switch
     {
-        return (
-            _settings.HandDataSource switch
-            {
-                HandDataSource.IndexFinger => records
-                    .Select(record => new Sample(GetTimestamp(record), record.HandIndex.Y))
-                    .ToArray(),
-                HandDataSource.MiddleFinger => records
-                    .Select(record => new Sample(GetTimestamp(record), record.HandMiddle.Y))
-                    .ToArray(),
-                _ => throw new NotImplementedException($"{_settings.HandDataSource} hand data source is not yet supported")
-            },
-            _settings.GazeDataSource switch
-            {
-                GazeDataSource.YawRotation => records
-                    .Select(record => new Sample(GetTimestamp(record), record.Eye.Yaw))
-                    .ToArray(),
-                GazeDataSource.PitchRotation => records
-                    .Select(record => new Sample(GetTimestamp(record), record.Eye.Pitch))
-                    .ToArray(),
-                _ => throw new NotImplementedException($"{_settings.GazeDataSource} gaze data source is not yet supported")
-            }
-        );
-    }
+        HandDataSource.IndexFinger => records
+            .Select(record => new Sample(GetTimestamp(record), record.HandIndex.Y))
+            .ToArray(),
+        HandDataSource.MiddleFinger => records
+            .Select(record => new Sample(GetTimestamp(record), record.HandMiddle.Y))
+            .ToArray(),
+        _ => throw new NotImplementedException($"{_settings.HandDataSource} hand data source is not yet supported")
+    };
+
+    private static Sample[] GetGazeSamples(VdlRecord[] records) => _settings.GazeDataSource switch
+    {
+        GazeDataSource.YawRotation => records
+            .Select(record => new Sample(GetTimestamp(record), record.Eye.Yaw))
+            .ToArray(),
+        GazeDataSource.PitchRotation => records
+            .Select(record => new Sample(GetTimestamp(record), record.Eye.Pitch))
+            .ToArray(),
+        _ => throw new NotImplementedException($"{_settings.GazeDataSource} gaze data source is not yet supported")
+    };
 
     private static double[] GetPupilSizes(VdlRecord[] records) => records
         .SkipWhile(record => record.NBackTaskEvent?.Type != NBackTaskEventType.SessionStart)

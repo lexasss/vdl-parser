@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:local="clr-namespace:VdlParser"
+        xmlns:ctrl="clr-namespace:VdlParser.Controls"
         xmlns:models="clr-namespace:VdlParser.Models"
         xmlns:det="clr-namespace:VdlParser.Detectors"
         mc:Ignorable="d"
@@ -41,18 +42,77 @@
             <Setter Property="Padding" Value="2,0,0,0"/>
             <Setter Property="Foreground" Value="Gray"/>
         </Style>
-        <Style x:Key="VdlHeader" TargetType="Label">
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="FontSize" Value="12"/>
-        </Style>
-        <Style x:Key="VdlSubHeader" TargetType="Label">
-            <Setter Property="FontSize" Value="10"/>
-        </Style>
 
         <Style x:Key="BlockHeader" TargetType="Label">
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style TargetType="{x:Type ListBoxItem}" x:Key="VdlListContainer">
+            <Style.Resources>
+                <Style x:Key="SubHeader" TargetType="Label">
+                    <Setter Property="FontSize" Value="10"/>
+                </Style>
+            </Style.Resources>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border Name="border"
+                                Padding="2"
+                                Margin="0"
+                                BorderThickness="0"
+                                SnapsToDevicePixels="true">
+                            <ContentPresenter />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="true">
+                                <Setter TargetName="border" Property="Background" Value="{x:Static SystemColors.HotTrackBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="true">
+                                <Setter TargetName="border" Property="Background" Value="{x:Static SystemColors.MenuHighlightBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="ContentTemplate">
+                <Setter.Value>
+                    <DataTemplate DataType="models:Vdl">
+                        <Border BorderThickness="1"
+                                BorderBrush="Gray">
+                            <StackPanel Name="container"
+                                        Background="{x:Static SystemColors.ControlBrush}">
+                                <Label FontWeight="Bold"
+                                       FontSize="12"
+                                       Content="{Binding Timestamp}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition/>
+                                    </Grid.ColumnDefinitions>
+                                    <WrapPanel Grid.Column="0">
+                                        <Label Style="{StaticResource SubHeader}"
+                                               Content="{Binding Participant}"/>
+                                        <TextBlock>,</TextBlock>
+                                        <Label Style="{StaticResource SubHeader}"
+                                               Content="{Binding Lambda}"/>
+                                    </WrapPanel>
+                                    <Label Grid.Column="1" Style="{StaticResource SubHeader}"
+                                           HorizontalContentAlignment="Right"
+                                           Content="{Binding RecordCount}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                        <DataTemplate.Triggers>
+                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListBoxItem}}, Path=IsSelected}"
+                                         Value="True">
+                                <Setter TargetName="container" Property="Background" Value="{x:Static SystemColors.ControlLightLightBrush}"/>
+                            </DataTrigger>
+                        </DataTemplate.Triggers>
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <ControlTemplate x:Key="CopySign" TargetType="ContentControl">
@@ -63,62 +123,6 @@
                 <TextBlock Margin="2,2,0,0" >▯</TextBlock>
             </Grid>
         </ControlTemplate>
-
-        <DataTemplate x:Key="VdlItem" DataType="models:Vdl">
-            <Border BorderThickness="1"
-                    BorderBrush="Gray">
-                <StackPanel Background="#FFEDEDED">
-                    <Label Style="{StaticResource VdlHeader}"
-                           Content="{Binding Timestamp}"/>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition/>
-                            <ColumnDefinition/>
-                        </Grid.ColumnDefinitions>
-                        <WrapPanel Grid.Column="0">
-                            <Label Style="{StaticResource VdlSubHeader}"
-                               Content="{Binding Participant}"/>
-                            <TextBlock>, </TextBlock>
-                            <Label Style="{StaticResource VdlSubHeader}"
-                               Content="{Binding Lambda}"/>
-                        </WrapPanel>
-                        <Label Grid.Column="1" Style="{StaticResource VdlSubHeader}"
-                               HorizontalContentAlignment="Right"
-                               Content="{Binding RecordCount}"/>
-                    </Grid>
-                </StackPanel>
-            </Border>
-        </DataTemplate>
-
-        <DataTemplate x:Key="VdlSelectedItem" DataType="models:Vdl">
-            <Border BorderThickness="1"
-                    BorderBrush="Gray">
-                <StackPanel Background="#FFEDEDFF">
-                    <Label Style="{StaticResource VdlHeader}"
-                           Content="{Binding Timestamp}"/>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition/>
-                            <ColumnDefinition/>
-                        </Grid.ColumnDefinitions>
-                        <Label Grid.Column="0" Style="{StaticResource VdlSubHeader}"
-                               Content="{Binding Participant}"/>
-                        <Label Grid.Column="1" Style="{StaticResource VdlSubHeader}"
-                               HorizontalContentAlignment="Right"
-                               Content="{Binding RecordCount}"/>
-                    </Grid>
-                </StackPanel>
-            </Border>
-        </DataTemplate>
-
-        <Style TargetType="{x:Type ListBoxItem}" x:Key="VdlListContainer">
-            <Setter Property="ContentTemplate" Value="{StaticResource VdlItem}" />
-            <Style.Triggers>
-                <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="ContentTemplate" Value="{StaticResource VdlSelectedItem}" />
-                </Trigger>
-            </Style.Triggers>
-        </Style>
 
         <ObjectDataProvider x:Key="TimestampSourceProvider"
                             MethodName="GetValues"
@@ -189,7 +193,7 @@
                                MinHeight="80"/>
             </Grid.RowDefinitions>
 
-            <local:Graph x:Name="graph"
+            <ctrl:Graph x:Name="graph"
                          Grid.Row="0"/>
             <GridSplitter Grid.Row="1"
                           Background="LightGray" 
@@ -263,7 +267,7 @@
                     IsEnabled="{Binding SelectedItem, ElementName=lsbVdls, Converter={StaticResource obj2bool}}"
                     Visibility="{Binding Path=UiState.IsSettingsPanelVisible, Converter={StaticResource bool2vis}, ConverterParameter={StaticResource true}}"
                     HorizontalAlignment="Right"
-                    Margin="0,1,4,0"
+                    Margin="10"
                     Content="Analyze"
                     Width="120"
                     Click="Analyze_Click"/>

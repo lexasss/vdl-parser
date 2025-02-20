@@ -44,58 +44,6 @@ public class PeakDetector : INotifyPropertyChanged
     public PeakDirection Direction { get; set; } = PeakDirection.Upward;
 
     public event PropertyChangedEventHandler? PropertyChanged;
-    /*
-    public static PeakDetector Load(DataSourceType dataSourceType)
-    {
-        var settings = Properties.Settings.Default;
-        string json = dataSourceType switch
-        {
-            DataSourceType.Hand => settings.HandPeakDetector,
-            DataSourceType.Gaze => settings.GazePeakDetector,
-            _ => throw new NotSupportedException($"{dataSourceType} is not yet suppoted")
-        };
-
-        var defaultDetector = dataSourceType switch
-        {
-            DataSourceType.Hand => new PeakDetector() { PeakThreshold = 1.5, BufferSize = 12, IgnoranceThrehold = 20 },
-            DataSourceType.Gaze => new PeakDetector() { PeakThreshold = 10, BufferSize = 30, IgnoranceThrehold = -1000 },
-            _ => throw new NotSupportedException($"{dataSourceType} is not yet suppoted")
-        };
-
-        if (string.IsNullOrEmpty(json))
-        {
-            return defaultDetector;
-        }
-
-        PeakDetector? result = null;
-        try
-        {
-            result = JsonSerializer.Deserialize<PeakDetector>(json);
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine(ex.Message);
-        }
-
-        return result ?? defaultDetector;
-    }
-
-    public static void Save(DataSourceType dataSourceType, PeakDetector detector)
-    {
-        var json = JsonSerializer.Serialize(detector);
-
-        var settings = Properties.Settings.Default;
-        if (dataSourceType == DataSourceType.Hand)
-        {
-            settings.HandPeakDetector = json;
-        }
-        else if (dataSourceType == DataSourceType.Gaze)
-        {
-            settings.GazePeakDetector = json;
-        }
-
-        settings.Save();
-    }*/
 
     public Peak[] Find(Sample[] samples)
     {
@@ -181,7 +129,8 @@ public class PeakDetector : INotifyPropertyChanged
                     }
                     else
                     {
-                        System.Diagnostics.Debug.WriteLine($"[{timestampStartIndex}] {timestampStart}-{timestampEnd} ({timestampEnd - timestampStart}) is too long interval");
+                        System.Diagnostics.Debug.WriteLine($"[{timestampStartIndex}] Peak detector > too long interval - " +
+                            $"{timestampStart}-{timestampEnd} ({timestampEnd - timestampStart})");
                     }
                 }
 

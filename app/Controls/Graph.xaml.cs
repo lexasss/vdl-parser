@@ -3,7 +3,7 @@ using System.ComponentModel;
 using System.Windows.Controls;
 using VdlParser.Detectors;
 
-namespace VdlParser;
+namespace VdlParser.Controls;
 
 public partial class Graph : UserControl, INotifyPropertyChanged
 {
