@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 
-namespace VdlParser;
+namespace VdlParser.Controls;
 
 public class GraphSettings : INotifyPropertyChanged, ISettings
 {

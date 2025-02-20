@@ -10,20 +10,17 @@ public partial class MainWindow : Window
     public Processor Processor { get; } = new Processor();
     public GeneralSettings Settings { get; } = GeneralSettings.Instance;
     public UiState UiState { get; } = Storage.Load<UiState>();
-    public GraphSettings GraphSettings { get; } = Storage.Load<GraphSettings>();
+    public Controls.GraphSettings GraphSettings => graph.Settings;
 
     public MainWindow()
     {
         InitializeComponent();
-
-        _graphRenderer = new GraphRenderer(graph, GraphSettings);
 
         GraphSettings.PropertyChanged += (s, e) => RefeedProcessor();
     }
 
     // Internal
 
-    GraphRenderer _graphRenderer;
     Models.IStatistics[] _statistics = []; // log data other than VDL
 
     private void RefeedProcessor()
@@ -33,18 +30,18 @@ public partial class MainWindow : Window
 
         Processor.SetVdl(Vdls.SelectedItem);
 
-        if (_graphRenderer.Content == GraphContent.RawData)
+        if (graph.DisplayState == Controls.GraphDisplayState.RawData)
         {
-            _graphRenderer.Reset();
-            _graphRenderer.AddRawData(Processor);
-            _graphRenderer.Render();
+            graph.Reset();
+            graph.AddRawData(Processor);
+            graph.Render();
             txbSummary.Text = null;
         }
-        else if (_graphRenderer.Content == GraphContent.Processed)
+        else if (graph.DisplayState == Controls.GraphDisplayState.ProcessedData)
         {
             Processor.Process();
 
-            _graphRenderer.DisplayProcessedData(Processor);
+            graph.DisplayProcessedData(Processor);
             txbSummary.Text = new Models.VdlStatistics(Processor).Get(Models.Format.List);
         }
     }
@@ -90,15 +87,15 @@ public partial class MainWindow : Window
             if (vdl != null)
             {
                 Processor.SetVdl(vdl);
-                _graphRenderer.Reset();
-                _graphRenderer.AddRawData(Processor);
-                _graphRenderer.Render();
+                graph.Reset();
+                graph.AddRawData(Processor);
+                graph.Render();
                 txbSummary.Text = null;
             }
         }
         else if (sender is ListBox lsb && lsb.SelectedItem == null)
         {
-            _graphRenderer.Reset();
+            graph.Reset();
             txbSummary.Text = null;
         }
     }
@@ -106,7 +103,7 @@ public partial class MainWindow : Window
     private void Analyze_Click(object sender, RoutedEventArgs e)
     {
         Processor.Process();
-        _graphRenderer.DisplayProcessedData(Processor);
+        graph.DisplayProcessedData(Processor);
         txbSummary.Text = new Models.VdlStatistics(Processor).Get(Models.Format.List);
     }
 
@@ -136,7 +133,7 @@ public partial class MainWindow : Window
         if (e.Key == Key.Delete && Vdls.SelectedItem != null)
         {
             Vdls.Remove(Vdls.SelectedItem);
-            _graphRenderer.Reset();
+            graph.Reset();
             txbSummary.Text = null;
         }
     }
