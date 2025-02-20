@@ -4,7 +4,7 @@ using VdlParser.Models;
 
 namespace VdlParser;
 
-public class Controller
+public static class Utils
 {
     /// <summary>
     /// Reads and parses log files.
@@ -13,7 +13,7 @@ public class Controller
     /// <returns>returns a tuple with 
     /// a. a list of Vdl data object, and 
     /// b. a list of other log files that share common base class to provide simple statistics only</returns>
-    public static (Vdl[], IStatistics[]) LoadLogData(string[] filenames)
+    public static (Vdl[], IStatistics[]) LoadData(string[] filenames)
     {
         var statisticsList = new List<IStatistics>();
         var vdlList = new List<Vdl>();

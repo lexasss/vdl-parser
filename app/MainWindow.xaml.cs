@@ -73,7 +73,7 @@ public partial class MainWindow : Window
         {
             Vdls.SelectedItem = null;
 
-            (var vdlList, _statistics) = Controller.LoadLogData(ofd.FileNames);
+            (var vdlList, _statistics) = Utils.LoadData(ofd.FileNames);
 
             Vdls.Add(vdlList);
 
@@ -149,7 +149,7 @@ public partial class MainWindow : Window
                 ? [new Models.VdlStatistics(Processor)]
                 : _statistics;
 
-            var wasCopied = Controller.CopySummaryToClipboard(statistics,
+            var wasCopied = Utils.CopySummaryToClipboard(statistics,
                 Keyboard.Modifiers == ModifierKeys.Shift);
 
             if (wasCopied)
