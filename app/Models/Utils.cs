@@ -23,12 +23,12 @@ internal static class Utils
         var ncttFiles = Directory.GetFiles(cttFolder, "ctt-*.txt");
 
         timestampedFilename = Path.GetFileNameWithoutExtension(timestampedFilename);
-        var nbtTimestamp = ParseDateTime(timestampedFilename.Split(['-', ' ']).Skip(1).ToArray());
+        var nbtTimestamp = ParseDateTime(timestampedFilename.Split(['-', ' ']).TakeLast(6).ToArray());
 
         var matchedNewCttFilename = ncttFiles.FirstOrDefault(ncttFilename =>
         {
             ncttFilename = Path.GetFileNameWithoutExtension(ncttFilename);
-            var octtTimestamp = ParseDateTime(ncttFilename.Split(['-', ' ']).Skip(1).ToArray());
+            var octtTimestamp = ParseDateTime(ncttFilename.Split(['-', ' ']).TakeLast(6).ToArray());
             var interval = nbtTimestamp - octtTimestamp;
             return Math.Abs(interval.TotalSeconds) < 30;
         });
