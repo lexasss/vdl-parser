@@ -29,20 +29,20 @@
         <sys:Double x:Key="settingsLabelWidth">160</sys:Double>
         <sys:Double x:Key="settingsValueWidth">60</sys:Double>
 
-        <Style TargetType="TextBox">
+        <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Padding" Value="2,0"/>
             <Setter Property="Margin" Value="0,2"/>
         </Style>
-        <Style TargetType="ComboBox">
+        <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Padding" Value="4,0"/>
             <Setter Property="Margin" Value="0,2"/>
         </Style>
-        <Style TargetType="Button">
+        <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
             <Setter Property="Padding" Value="8"/>
         </Style>
-        <Style x:Key="CopyButton" TargetType="Button">
+        <Style x:Key="CopyButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
             <Setter Property="Width" Value="32"/>
             <Setter Property="Height" Value="32"/>
             <Setter Property="FontSize" Value="20"/>
@@ -50,7 +50,7 @@
             <Setter Property="Foreground" Value="Gray"/>
         </Style>
 
-        <Style x:Key="BlockHeader" TargetType="Label">
+        <Style x:Key="BlockHeader" TargetType="Label" BasedOn="{StaticResource {x:Type Label}}">
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
@@ -89,7 +89,7 @@
 
         <Style x:Key="VdlListContainer" TargetType="{x:Type ListBoxItem}">
             <Style.Resources>
-                <Style x:Key="SubHeader" TargetType="Label">
+                <Style x:Key="SubHeader" TargetType="Label" BasedOn="{StaticResource {x:Type Label}}">
                     <Setter Property="FontSize" Value="10"/>
                 </Style>
             </Style.Resources>
@@ -242,14 +242,14 @@
                           ResizeBehavior="PreviousAndNext"/>
             <StackPanel Grid.Row="1">
                 <StackPanel.Resources>
-                    <Style TargetType="Separator">
+                    <Style TargetType="Separator" BasedOn="{StaticResource {x:Type Separator}}">
                         <Setter Property="Width" Value="30"/>
                         <Setter Property="Background" Value="Transparent"/>
                     </Style>
-                    <Style TargetType="Label">
+                    <Style TargetType="Label" BasedOn="{StaticResource {x:Type Label}}">
                         <Setter Property="VerticalAlignment" Value="Center"/>
                     </Style>
-                    <Style TargetType="CheckBox">
+                    <Style TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}">
                         <Setter Property="VerticalAlignment" Value="Center"/>
                     </Style>
                 </StackPanel.Resources>
@@ -257,8 +257,9 @@
                             DataContext="{Binding Path=Settings}"
                             Margin="0,8">
                     <Label Style="{StaticResource BlockHeader}"
+                           Width="104"
+                           HorizontalContentAlignment="Left"
                            Content="Data sources"/>
-                    <Separator/>
                     <WrapPanel>
                         <Label Content="Timestamp"/>
                         <ComboBox ItemsSource="{Binding Source={StaticResource TimestampSourceProvider}}"
@@ -287,8 +288,9 @@
                 <StackPanel Orientation="Horizontal"
                             DataContext="{Binding GraphSettings, Mode=OneTime}">
                     <Label Style="{StaticResource BlockHeader}"
+                           Width="108"
+                           HorizontalContentAlignment="Left"
                            Content="Graph elements"/>
-                    <Separator/>
                     <CheckBox Content="Legend"
                               VerticalAlignment="Center"
                               IsChecked="{Binding IsLegendVisible, ElementName=graph, Mode=TwoWay}"/>
@@ -349,8 +351,6 @@
                         VerticalContentAlignment="Center"
                         Click="SettingShowHide_Click"/>
 
-                <!--Visibility="{Binding Path=UiState.IsSettingsPanelVisible, Converter={StaticResource bool2vis}}"-->
-                <!--Width="{Binding Path=UiState.IsSettingsPanelVisible, Converter={StaticResource bool2num}, ConverterParameter={StaticResource rightPanelWidth}}"-->
                 <Grid Grid.Column="1"
                       Style="{StaticResource Expand}"
                       Tag="{Binding Path=UiState.IsSettingsPanelVisible}">
@@ -364,19 +364,19 @@
                                   VerticalScrollBarVisibility="Visible">
                         <StackPanel Margin="0,0,10,0">
                             <StackPanel.Resources>
-                                <Style TargetType="Separator">
+                                <Style TargetType="Separator" BasedOn="{StaticResource {x:Type Separator}}">
                                     <Setter Property="Margin" Value="0,6"/>
                                 </Style>
                                 <Style TargetType="Expander" BasedOn="{StaticResource {x:Type Expander}}">
                                     <Setter Property="FontWeight" Value="Bold"/>
                                 </Style>
-                                <Style TargetType="Label">
+                                <Style TargetType="Label" BasedOn="{StaticResource {x:Type Label}}">
                                     <Setter Property="FontWeight" Value="Normal"/>
                                 </Style>
-                                <Style TargetType="TextBox">
+                                <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
                                     <Setter Property="FontWeight" Value="Normal"/>
                                 </Style>
-                                <Style TargetType="ComboBox">
+                                <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
                                     <Setter Property="FontWeight" Value="Normal"/>
                                 </Style>
                             </StackPanel.Resources>
@@ -397,26 +397,26 @@
                                     </Grid.ColumnDefinitions>
 
                                     <Label Grid.Row="0" Grid.Column="0"
-                                            Content="Buffer size"/>
+                                           Content="Buffer size"/>
                                     <TextBox Grid.Row="0" Grid.Column="1"
-                                                Text="{Binding BufferSize, Mode=TwoWay}"/>
+                                             Text="{Binding BufferSize, Mode=TwoWay}"/>
                                     <Label Grid.Row="1" Grid.Column="0"
-                                            Content="Peak relative threshold"/>
+                                           Content="Peak relative threshold"/>
                                     <TextBox Grid.Row="1" Grid.Column="1"
-                                                Text="{Binding PeakThreshold, Mode=TwoWay}"/>
+                                             Text="{Binding PeakThreshold, Mode=TwoWay}"/>
                                     <Label Grid.Row="2" Grid.Column="0"
-                                            Content="Max peak duration (ms)"/>
+                                           Content="Max peak duration (ms)"/>
                                     <TextBox Grid.Row="2" Grid.Column="1"
-                                                Text="{Binding MaxPeakDuration, Mode=TwoWay}"/>
+                                             Text="{Binding MaxPeakDuration, Mode=TwoWay}"/>
                                     <Label Grid.Row="3" Grid.Column="0"
-                                            Content="Min inter-peak interval (ms)"/>
+                                           Content="Min inter-peak interval (ms)"/>
                                     <TextBox Grid.Row="3" Grid.Column="1"
-                                                Text="{Binding MinInterPeakInterval, Mode=TwoWay}"/>
+                                             Text="{Binding MinInterPeakInterval, Mode=TwoWay}"/>
                                     <Label Grid.Row="4" Grid.Column="0"
-                                            Content="Peak direction"/>
+                                           Content="Peak direction"/>
                                     <ComboBox Grid.Row="4" Grid.Column="1"
-                                                ItemsSource="{Binding Source={StaticResource PeakDirectionProvider}}"
-                                                SelectedItem="{Binding Direction, Mode=TwoWay}"/>
+                                              ItemsSource="{Binding Source={StaticResource PeakDirectionProvider}}"
+                                              SelectedItem="{Binding Direction, Mode=TwoWay}"/>
                                 </Grid>
                             </Expander>
 
