@@ -14,13 +14,20 @@
         Height="690" Width="1240"
         MinHeight="690" MinWidth="1240"
         Icon="/Assets/images/icon.png"
+        PreviewKeyUp="Window_PreviewKeyUp"
         Closed="Window_Closed">
 
     <Window.Resources>
         <local:ObjectToBoolConverter x:Key="obj2bool"/>
         <local:StringToBoolConverter x:Key="str2bool"/>
         <local:BoolToVisibilityConverter x:Key="bool2vis"/>
+        <local:BoolToNumberConverter x:Key="bool2num"/>
+        <local:NumberToGridLengthConverter x:Key="num2gl"/>
         <sys:Boolean x:Key="true">True</sys:Boolean>
+        <sys:Boolean x:Key="false">False</sys:Boolean>
+        <sys:Double x:Key="settingsPanelWidth">250</sys:Double>
+        <sys:Double x:Key="settingsLabelWidth">160</sys:Double>
+        <sys:Double x:Key="settingsValueWidth">60</sys:Double>
 
         <Style TargetType="TextBox">
             <Setter Property="VerticalContentAlignment" Value="Center"/>
@@ -49,7 +56,38 @@
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
         </Style>
 
-        <Style TargetType="{x:Type ListBoxItem}" x:Key="VdlListContainer">
+        <Style x:Key="Expand" TargetType="Grid">
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <ScaleTransform ScaleX="1"/>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Width" Value="{StaticResource settingsPanelWidth}"/>
+            <Style.Triggers>
+                <Trigger Property="Tag" Value="{StaticResource false}">
+                    <Trigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="Width"
+                                                 From="{StaticResource settingsPanelWidth}" To="0"
+                                                 Duration="0:00:00.5"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </Trigger.EnterActions>
+                    <Trigger.ExitActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="Width"
+                                                 From="0" To="{StaticResource settingsPanelWidth}"
+                                                 Duration="0:00:00.5"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </Trigger.ExitActions>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="VdlListContainer" TargetType="{x:Type ListBoxItem}">
             <Style.Resources>
                 <Style x:Key="SubHeader" TargetType="Label">
                     <Setter Property="FontSize" Value="10"/>
@@ -62,14 +100,14 @@
                                 Padding="2"
                                 Margin="0"
                                 BorderThickness="0"
-                                SnapsToDevicePixels="true">
+                                SnapsToDevicePixels="True">
                             <ContentPresenter />
                         </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsSelected" Value="true">
+                            <Trigger Property="IsSelected" Value="True">
                                 <Setter TargetName="border" Property="Background" Value="{x:Static SystemColors.HotTrackBrush}"/>
                             </Trigger>
-                            <Trigger Property="IsMouseOver" Value="true">
+                            <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="border" Property="Background" Value="{x:Static SystemColors.MenuHighlightBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -175,12 +213,12 @@
                      ItemsSource="{Binding Items}"
                      SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
                      ItemContainerStyle="{StaticResource VdlListContainer}"
-                     SelectionChanged="VdlsListBox_SelectionChanged"
+                     SelectionChanged="Vdls_SelectionChanged"
                      KeyUp="Vdls_KeyUp"/>
 
             <Button Grid.Row="1"
                 Content="Load..."
-                Click="OpenButton_Click"/>
+                Click="Load_Click"/>
         </Grid>
 
 
@@ -249,7 +287,7 @@
                 <StackPanel Orientation="Horizontal"
                             DataContext="{Binding GraphSettings, Mode=OneTime}">
                     <Label Style="{StaticResource BlockHeader}"
-                           Content="Graph element"/>
+                           Content="Graph elements"/>
                     <Separator/>
                     <CheckBox Content="Legend"
                               VerticalAlignment="Center"
@@ -311,8 +349,11 @@
                         VerticalContentAlignment="Center"
                         Click="SettingShowHide_Click"/>
 
+                <!--Visibility="{Binding Path=UiState.IsSettingsPanelVisible, Converter={StaticResource bool2vis}}"-->
+                <!--Width="{Binding Path=UiState.IsSettingsPanelVisible, Converter={StaticResource bool2num}, ConverterParameter={StaticResource rightPanelWidth}}"-->
                 <Grid Grid.Column="1"
-                      Visibility="{Binding Path=UiState.IsSettingsPanelVisible, Converter={StaticResource bool2vis}}">
+                      Style="{StaticResource Expand}"
+                      Tag="{Binding Path=UiState.IsSettingsPanelVisible}">
                     <Grid.RowDefinitions>
                         <RowDefinition/>
                         <RowDefinition Height="Auto"/>
@@ -320,9 +361,8 @@
 
                     <ScrollViewer Grid.Row="0"
                                   Margin="0,0,0,8"
-                                  VerticalScrollBarVisibility="Auto">
-                        <StackPanel MinWidth="224"
-                                    Margin="0,0,10,0">
+                                  VerticalScrollBarVisibility="Visible">
+                        <StackPanel Margin="0,0,10,0">
                             <StackPanel.Resources>
                                 <Style TargetType="Separator">
                                     <Setter Property="Margin" Value="0,6"/>
@@ -352,8 +392,8 @@
                                         <RowDefinition/>
                                     </Grid.RowDefinitions>
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition/>
-                                        <ColumnDefinition Width="60"/>
+                                        <ColumnDefinition Width="{Binding Source={StaticResource settingsLabelWidth}, Converter={StaticResource num2gl}}"/>
+                                        <ColumnDefinition Width="{Binding Source={StaticResource settingsValueWidth}, Converter={StaticResource num2gl}}"/>
                                     </Grid.ColumnDefinitions>
 
                                     <Label Grid.Row="0" Grid.Column="0"
@@ -393,8 +433,8 @@
                                         <RowDefinition/>
                                     </Grid.RowDefinitions>
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition/>
-                                        <ColumnDefinition Width="60"/>
+                                        <ColumnDefinition Width="{Binding Source={StaticResource settingsLabelWidth}, Converter={StaticResource num2gl}}"/>
+                                        <ColumnDefinition Width="{Binding Source={StaticResource settingsValueWidth}, Converter={StaticResource num2gl}}"/>
                                     </Grid.ColumnDefinitions>
 
                                     <Label Grid.Row="0" Grid.Column="0"
@@ -435,8 +475,8 @@
                                         <RowDefinition/>
                                     </Grid.RowDefinitions>
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition/>
-                                        <ColumnDefinition Width="60"/>
+                                        <ColumnDefinition Width="{Binding Source={StaticResource settingsLabelWidth}, Converter={StaticResource num2gl}}"/>
+                                        <ColumnDefinition Width="{Binding Source={StaticResource settingsValueWidth}, Converter={StaticResource num2gl}}"/>
                                     </Grid.ColumnDefinitions>
 
                                     <Label Grid.Row="0" Grid.Column="0"
@@ -481,8 +521,8 @@
                                         <RowDefinition/>
                                     </Grid.RowDefinitions>
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition/>
-                                        <ColumnDefinition Width="60"/>
+                                        <ColumnDefinition Width="{Binding Source={StaticResource settingsLabelWidth}, Converter={StaticResource num2gl}}"/>
+                                        <ColumnDefinition Width="{Binding Source={StaticResource settingsValueWidth}, Converter={StaticResource num2gl}}"/>
                                     </Grid.ColumnDefinitions>
 
                                     <Label Grid.Row="0" Grid.Column="0"
@@ -526,8 +566,8 @@
                                         <RowDefinition/>
                                     </Grid.RowDefinitions>
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition/>
-                                        <ColumnDefinition Width="60"/>
+                                        <ColumnDefinition Width="{Binding Source={StaticResource settingsLabelWidth}, Converter={StaticResource num2gl}}"/>
+                                        <ColumnDefinition Width="{Binding Source={StaticResource settingsValueWidth}, Converter={StaticResource num2gl}}"/>
                                     </Grid.ColumnDefinitions>
 
                                     <Label Grid.Row="0" Grid.Column="0"

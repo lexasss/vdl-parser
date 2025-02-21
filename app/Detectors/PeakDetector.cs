@@ -14,8 +14,8 @@ public enum DataSourceType
 
 public enum PeakDirection
 {
-    Upward,
-    Downward
+    Up,
+    Down
 }
 
 public class HandPeakDetector : PeakDetector, ISettings
@@ -41,7 +41,7 @@ public class PeakDetector : INotifyPropertyChanged
     public double IgnoranceThrehold { get; set; } = 20;
     public long MaxPeakDuration { get; set; } = 1500;   // ms
     public long MinInterPeakInterval { get; set; } = 1000;   // ms
-    public PeakDirection Direction { get; set; } = PeakDirection.Upward;
+    public PeakDirection Direction { get; set; } = PeakDirection.Up;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -50,8 +50,8 @@ public class PeakDetector : INotifyPropertyChanged
         var peaks = new List<Peak>();
         var ignoranceThreshold = Direction switch
         {
-            PeakDirection.Upward => IgnoranceThrehold,
-            PeakDirection.Downward => -IgnoranceThrehold,
+            PeakDirection.Up => IgnoranceThrehold,
+            PeakDirection.Down => -IgnoranceThrehold,
             _ => throw new NotImplementedException($"{Direction} direction is not supported")
         };
 
@@ -144,7 +144,7 @@ public class PeakDetector : INotifyPropertyChanged
     public void ReversePeakSearchDirection()
     {
         PeakThreshold = -PeakThreshold;
-        Direction = Direction == PeakDirection.Upward ? PeakDirection.Downward : PeakDirection.Upward;
+        Direction = Direction == PeakDirection.Up ? PeakDirection.Down : PeakDirection.Up;
 
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(PeakThreshold)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Direction)));
@@ -181,15 +181,15 @@ public class PeakDetector : INotifyPropertyChanged
 
     private bool IsBelowThreshold(double value, double threshold) => Direction switch
     {
-        PeakDirection.Upward => value < threshold,
-        PeakDirection.Downward => value > threshold,
+        PeakDirection.Up => value < threshold,
+        PeakDirection.Down => value > threshold,
         _ => throw new NotImplementedException($"{Direction} direction is not supported")
     };
 
     private bool IsAboveThreshold(double value, double threshold) => Direction switch
     {
-        PeakDirection.Upward => value > threshold,
-        PeakDirection.Downward => value < threshold,
+        PeakDirection.Up => value > threshold,
+        PeakDirection.Down => value < threshold,
         _ => throw new NotImplementedException($"{Direction} direction is not supported")
     };
 }

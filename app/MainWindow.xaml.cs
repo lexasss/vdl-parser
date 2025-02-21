@@ -48,6 +48,14 @@ public partial class MainWindow : Window
 
     // UI events
 
+    private void Window_PreviewKeyUp(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.F2)
+        {
+            Load_Click(sender, new RoutedEventArgs());
+        }
+    }
+
     private void Window_Closed(object sender, EventArgs e)
     {
         Processor.SaveSettings();
@@ -55,31 +63,7 @@ public partial class MainWindow : Window
         Storage.Save(GraphSettings);
     }
 
-    private void OpenButton_Click(object sender, RoutedEventArgs e)
-    {
-        var ofd = new Microsoft.Win32.OpenFileDialog()
-        {
-            Filter = "All log files|vdl-*.txt;ctt-*.txt;CTT*.csv;n-back-task-*.txt" + 
-                "|VDL files|vdl-*.txt" + 
-                "|CTT files|ctt-*.txt;CTT*.csv" + 
-                "|NBack-Task files|n-back-task-*.txt",
-            Multiselect = true,
-        };
-
-        if (ofd.ShowDialog() == true)
-        {
-            Vdls.SelectedItem = null;
-
-            (var vdlList, _statistics) = Utils.LoadData(ofd.FileNames);
-
-            Vdls.Add(vdlList);
-
-            var summary = _statistics.Select(statistics => string.Join('\n', statistics.Get(Models.Format.List)));
-            txbSummary.Text = string.Join("\n\n", summary);
-        }
-    }
-
-    private void VdlsListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void Vdls_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (e.AddedItems.Count > 0)
         {
@@ -97,6 +81,46 @@ public partial class MainWindow : Window
         {
             graph.Reset();
             txbSummary.Text = null;
+        }
+    }
+
+    private void Vdls_KeyUp(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Delete && Vdls.SelectedItem != null)
+        {
+            Vdls.Remove(Vdls.SelectedItem);
+            graph.Reset();
+            txbSummary.Text = null;
+        }
+        else if (e.Key == Key.Enter && Vdls.SelectedItem != null)
+        {
+            Analyze_Click(this, new RoutedEventArgs());
+        }
+    }
+
+    private void Load_Click(object sender, RoutedEventArgs e)
+    {
+        var ofd = new Microsoft.Win32.OpenFileDialog()
+        {
+            Filter = "All log files|vdl-*.txt;ctt-*.txt;CTT*.csv;n-back-task-*.txt" +
+                "|VDL files|vdl-*.txt" +
+                "|CTT files|ctt-*.txt;CTT*.csv" +
+                "|NBack-Task files|n-back-task-*.txt",
+            Multiselect = true,
+        };
+
+        if (ofd.ShowDialog() == true)
+        {
+            Vdls.SelectedItem = null;
+
+            (var vdlList, _statistics) = Utils.LoadData(ofd.FileNames);
+
+            Vdls.Add(vdlList);
+
+            var summary = _statistics.Select(statistics => string.Join('\n', statistics.Get(Models.Format.List)));
+            txbSummary.Text = string.Join("\n\n", summary);
+
+            lsbVdls.Focus();
         }
     }
 
@@ -126,16 +150,6 @@ public partial class MainWindow : Window
     {
         UiState.IsSettingsPanelVisible = !UiState.IsSettingsPanelVisible;
         ((Button)sender).Content = UiState.IsSettingsPanelVisible ? "🠾" : "🠼";
-    }
-
-    private void Vdls_KeyUp(object sender, KeyEventArgs e)
-    {
-        if (e.Key == Key.Delete && Vdls.SelectedItem != null)
-        {
-            Vdls.Remove(Vdls.SelectedItem);
-            graph.Reset();
-            txbSummary.Text = null;
-        }
     }
 
     private void CopyButton_Click(object sender, RoutedEventArgs e)
