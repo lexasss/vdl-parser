@@ -56,13 +56,20 @@ public class Processor
 
         var records = Vdl.Records;
 
-        HandSamples = GetHandSamples(records);
-        GazeSamples = GetGazeSamples(records);
+        var firstRealTrialSysTimestamp = GetFirstRealTrialSysTimestamp(records);
 
-        PupilSizeSamples = records
+        _records = records
+            .SkipWhile(record => record.TimestampSystem < firstRealTrialSysTimestamp)
+            .TakeWhile(record => record.NBackTaskEvent?.Type != NBackTaskEventType.SessionEnd)
+            .ToArray();
+
+        HandSamples = GetHandSamples(_records);
+        GazeSamples = GetGazeSamples(_records);
+
+        PupilSizeSamples = _records
             .Select(record => new Sample(GetTimestamp(record), record.PupilSize))
             .ToArray();
-        PupilOpennessSamples = records
+        PupilOpennessSamples = _records
             .Select(record => new Sample(GetTimestamp(record), record.PupilOpenness))
             .ToArray();
     }
@@ -72,19 +79,17 @@ public class Processor
         if (Vdl == null)
             return;
 
-        var records = Vdl.Records;
-
         HandPeaks = HandPeakDetector.Find(HandSamples);
         GazePeaks = GazePeakDetector.Find(GazeSamples);
 
-        Trials = Trial.GetTrials(records, HandPeaks, GazePeaks);
+        Trials = Trial.GetTrials(_records, HandPeaks, GazePeaks);
 
         GazeDataMisses = BlinkDetector.Find(GazeSamples);
-        Blinks = BlinkDetector2.Find(records);
+        Blinks = BlinkDetector2.Find(_records);
 
-        PupilSizes = GetPupilSizes(records);
+        PupilSizes = GetPupilSizes(_records);
 
-        NBackTaskEvents = GetNBackTaskEvents(records);
+        NBackTaskEvents = GetNBackTaskEvents(_records);
     }
 
     public static long GetTimestamp(VdlRecord record) => _settings.TimestampSource switch
@@ -97,6 +102,15 @@ public class Processor
     // Internal
 
     static readonly GeneralSettings _settings = GeneralSettings.Instance;
+
+
+    VdlRecord[] _records = [];
+
+    private long GetFirstRealTrialSysTimestamp(VdlRecord[] records) => records
+        .Where(record => record.NBackTaskEvent?.Type == NBackTaskEventType.TrialStart)
+        .Skip(2)
+        .First()
+        .TimestampSystem;
 
     private static Sample[] GetHandSamples(VdlRecord[] records) => _settings.HandDataSource switch
     {
@@ -121,8 +135,6 @@ public class Processor
     };
 
     private static double[] GetPupilSizes(VdlRecord[] records) => records
-        .SkipWhile(record => record.NBackTaskEvent?.Type != NBackTaskEventType.SessionStart)
-        .TakeWhile(record => record.NBackTaskEvent?.Type != NBackTaskEventType.SessionEnd)
         .Where(record => record.LeftPupil.Openness > 0.6 && record.RightPupil.Openness > 0.6)
         .Select(record => (record.LeftPupil.Size + record.RightPupil.Size) / 2)
         .ToArray();
