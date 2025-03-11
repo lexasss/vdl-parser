@@ -47,7 +47,7 @@ public class VdlStatistics(Processor processor) : IStatistics
         if (format == Format.List)
             return string.Join('\n', [
                 $"Hand/Gaze peaks: {processor.HandPeaks.Length}/{processor.GazePeaks.Length}",
-                $"  match count = {processor.Trials.Length} ({matchesCountPercentage:F1}%)",
+                $"  match count = {gazeHandMatchCount} ({matchesCountPercentage:F1}%)",
                 $"Correct responses = {correctResponses*100:F1}%",
                 $"Response delay",
                 $"  mean = {responseIntervalMean:F0} ms (SD = {responseIntervalStd:F1} ms)",

@@ -96,10 +96,11 @@ public class BlinkDetector2 : ISettings
                 var confidences = new double[] { confOfPeakInGazeData, confOfPeakInPupilSize, confOfPeakInPupilOpenness };
                 if (confidences.All(t => t > ThresholdConfidence))
                 {
+                    /*
                     confOfPeakInGazeData = GetPeakConfidence(i, ThresholdEyeRotation, GetEyeData);
                     confOfPeakInPupilSize = GetPeakConfidence(i, ThresholdPupilSize, r => r.PupilSize);
                     confOfPeakInPupilOpenness = GetPeakConfidence(i, ThresholdPupilOpenness, r => r.PupilOpenness, ignoreRight: true);
-
+                    */
                     blinks.Add(new Blink(lastTimestamp, i - 1, ts, i, interval));
 
                     i += BufferSize;
