@@ -56,7 +56,15 @@ public class Processor
 
         var records = Vdl.Records;
 
-        var firstRealTrialSysTimestamp = GetFirstRealTrialSysTimestamp(records);
+        var firstRealTrialSysTimestamp = records[0].TimestampSystem;
+        try
+        {
+            GetFirstRealTrialSysTimestamp(records);
+        }
+        catch
+        {
+            System.Diagnostics.Debug.WriteLine("WARNINING: cannot get the timestamp of the NBT start event");
+        }
 
         _records = records
             .SkipWhile(record => record.TimestampSystem < firstRealTrialSysTimestamp)
