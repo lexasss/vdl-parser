@@ -88,12 +88,12 @@ public class CttNew(string filename, int participantId, bool isVr, CttNewRecord[
         var vdlFiles = Directory.GetFiles(vdlFolder);
 
         cttFilename = Path.GetFileNameWithoutExtension(cttFilename);
-        var cttTimestamp = Utils.ParseDateTime(cttFilename.Split(['-', ' ']).TakeLast(6).ToArray());
+        var cttTimestamp = Utils.ParseDateTime(cttFilename.Split(['-', ' ']).ToArray());
 
         var matchedVdlFilename = vdlFiles.FirstOrDefault(vdlFilename =>
         {
             vdlFilename = Path.GetFileNameWithoutExtension(vdlFilename);
-            var vdlTimestamp = Utils.ParseDateTime(vdlFilename.Split(['-', ' ']).Skip(1).Take(6).ToArray());
+            var vdlTimestamp = Utils.ParseDateTime(vdlFilename.Split(['-', ' ']).ToArray());
             var interval = vdlTimestamp - cttTimestamp;
             return Math.Abs(interval.TotalSeconds) < 30;
         });
