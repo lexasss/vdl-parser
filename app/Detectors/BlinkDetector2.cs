@@ -42,7 +42,7 @@ public class BlinkDetector2 : ISettings
             var a = (min - baseline) / thresohold * 1.75;
             return Math.Max(0, a / Math.Sqrt(1 + a * a));
         }*/
-        double GetPeakConfidence(int index, double thresohold, Func<VdlRecord, double> getData, bool ignoreRight = false)
+        double GetPeakConfidence(int index, double thresohold, Func<VdlRecord, double> getData, bool ignoreRight = false, bool ignoreDirection = false)
         {
             if ((index + BufferSize) >= samples.Length)
                 return 0;
@@ -53,6 +53,8 @@ public class BlinkDetector2 : ISettings
 
             var diff = (diffLeft + diffRight) / 2;
             var a = diff / thresohold;
+            if (ignoreDirection)
+                a = Math.Abs(a);
             var result = Math.Max(0, a / Math.Sqrt(1 + a * a));
 
             if (diffLeft / diffRight < 0.3 || diffLeft / diffRight > 3)
@@ -88,8 +90,8 @@ public class BlinkDetector2 : ISettings
             var interval = ts - lastTimestamp;
             if (interval >= BlinkMinDuration && interval <= BlinkMaxDuration)
             {
-                var confOfPeakInGazeData = GetPeakConfidence(i, ThresholdEyeRotation, GetEyeData);
-                var confOfPeakInPupilSize = GetPeakConfidence(i, ThresholdPupilSize, r => r.PupilSize);
+                var confOfPeakInGazeData = GetPeakConfidence(i, ThresholdEyeRotation, GetEyeData, ignoreDirection: true);
+                var confOfPeakInPupilSize = GetPeakConfidence(i, ThresholdPupilSize, r => r.PupilSize, ignoreDirection: true);
                 var confOfPeakInPupilOpenness = GetPeakConfidence(i, ThresholdPupilOpenness, r => r.PupilOpenness, ignoreRight: true);
 
                 var debugMsg = "--------";

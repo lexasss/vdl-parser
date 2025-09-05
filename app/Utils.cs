@@ -42,6 +42,15 @@ public static class Utils
                     }
                 }
             }
+            else if (fn.StartsWith("varjo_"))
+            {
+                var varjo = Varjo.Load(filename);
+                if (varjo != null && Vdl.FromVarjo(varjo) is Vdl vdl)
+                {
+                    vdlList.Add(vdl);
+                    wasParsed = true;
+                }
+            }
             else
             {
                 IStatistics? statistics = null;

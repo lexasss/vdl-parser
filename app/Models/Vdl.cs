@@ -64,4 +64,39 @@ public class Vdl
         var timestamp = string.Join('-', Path.GetFileName(filename).Split('.')[0].Split('-')[1..]);
         return records.Count > 0 ? new Vdl(timestamp, participant, lambda, records.ToArray()) : null;
     }
+
+    public static Vdl? FromVarjo(Varjo varjo)
+    {
+        long tsSystem = 0;
+        long tsHeadset = 0;
+
+        System.Diagnostics.Debug.WriteLine($"Loading from Varjo...");
+
+        var records = new List<VdlRecord>();
+
+        foreach (var r in varjo.Records)
+        {
+            var record = VdlRecord.FromVarjo(r);
+
+            if (record != null)
+            {
+                if (tsSystem == 0)
+                {
+                    tsSystem = record.TimestampSystem;
+                    tsHeadset = record.TimestampHeadset;
+                }
+
+                var newRec = record with
+                {
+                    TimestampSystem = record.TimestampSystem - tsSystem,
+                    TimestampHeadset = record.TimestampHeadset - tsHeadset,
+                };
+                records.Add(newRec);
+            }
+        }
+
+        System.Diagnostics.Debug.WriteLine($"Record count: {records.Count}");
+
+        return records.Count > 0 ? new Vdl(varjo.Timestamp, string.Empty, 0, records.ToArray()) : null;
+    }
 }

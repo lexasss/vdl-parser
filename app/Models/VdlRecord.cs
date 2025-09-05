@@ -1,7 +1,5 @@
 ﻿namespace VdlParser.Models;
 
-public record class Rotation(double Pitch, double Yaw, double Roll);
-public record class Vector3D(double X, double Y, double Z);
 public record class Pupil(double Openness, double Size);
 
 public enum NBackTaskEventType
@@ -52,11 +50,11 @@ public record class VdlRecord(
                 string.IsNullOrEmpty(p[22]) ? null :
                     p[22].Split(' ') switch
                     {
-                    ["STR"] => new NBackTaskEvent(NBackTaskEventType.SessionStart),
-                    ["SET", string id] => new NBackTaskTrial(NBackTaskEventType.TrialStart, int.Parse(id)),
-                    ["ACT", string id] => new NBackTaskTrial(NBackTaskEventType.TrialResponse, int.Parse(id)),
-                    ["RES", string id, string isSuccess] => new NBackTaskTrialResult(NBackTaskEventType.TrialEnd, int.Parse(id), bool.Parse(isSuccess)),
-                    ["FIN"] => new NBackTaskEvent(NBackTaskEventType.SessionEnd),
+                        ["STR"] => new NBackTaskEvent(NBackTaskEventType.SessionStart),
+                        ["SET", string id] => new NBackTaskTrial(NBackTaskEventType.TrialStart, int.Parse(id)),
+                        ["ACT", string id] => new NBackTaskTrial(NBackTaskEventType.TrialResponse, int.Parse(id)),
+                        ["RES", string id, string isSuccess] => new NBackTaskTrialResult(NBackTaskEventType.TrialEnd, int.Parse(id), bool.Parse(isSuccess)),
+                        ["FIN"] => new NBackTaskEvent(NBackTaskEventType.SessionEnd),
                         _ => throw new Exception($"Unknown NBackTask event: {p[22]}")
                     }
             );
@@ -68,4 +66,12 @@ public record class VdlRecord(
 
         return result;
     }
+    public static VdlRecord? FromVarjo(VarjoRecord r) => new VdlRecord(
+        r.TimestampSystem, r.TimestampUnix,
+        new Rotation(r.GazeForward.X, r.GazeForward.Y, r.GazeForward.Z),
+        Rotation.Zero,
+        new Pupil(r.Left.EyeOpenness, r.Left.PupilDiameterInMm),
+        new Pupil(r.Right.EyeOpenness, r.Right.PupilDiameterInMm),
+        Vector3D.Zero, Vector3D.Zero, Vector3D.Zero, Vector3D.Zero,
+        null);
 }

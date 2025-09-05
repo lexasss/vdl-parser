@@ -102,8 +102,9 @@ public partial class MainWindow : Window
     {
         var ofd = new Microsoft.Win32.OpenFileDialog()
         {
-            Filter = "All log files|vdl-*.txt;ctt-*.txt;CTT*.csv;n-back-task-*.txt" +
+            Filter = "All log files|vdl-*.txt;varjo_*.csv;ctt-*.txt;CTT*.csv;n-back-task-*.txt" +
                 "|VDL files|vdl-*.txt" +
+                "|Varjo files|varjo_*.csv" +
                 "|CTT files|ctt-*.txt;CTT*.csv" +
                 "|NBack-Task files|n-back-task-*.txt",
             Multiselect = true,
