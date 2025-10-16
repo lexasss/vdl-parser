@@ -29,7 +29,7 @@ public record class VarjoRecord(
     double FocusDistance,
     int FrameNumber,
     double Stability,
-    int Status,
+    VarjoTrackingStatus Status,
 
     Vector3D GazeForward,
     Vector3D GazeOrigin,
@@ -58,7 +58,7 @@ public record class VarjoRecord(
         {
             result = new VarjoRecord(long.Parse(p[0]) / 1_000_000, long.Parse(p[1]) / 1_000_000, long.Parse(p[2]) / 1_000_000,
                 double.Parse(p[3]), int.Parse(p[4]),
-                double.Parse(p[5]), int.Parse(p[6]),
+                double.Parse(p[5]), (VarjoTrackingStatus)int.Parse(p[6]),
                 new Vector3D(double.Parse(p[7]), double.Parse(p[8]), double.Parse(p[9])),
                 new Vector3D(double.Parse(p[10]), double.Parse(p[11]), double.Parse(p[12])),
                 Vector2D.Parse(p[13], p[14]),

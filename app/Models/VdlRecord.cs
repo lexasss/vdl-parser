@@ -24,6 +24,10 @@ public record class VdlRecord(
 {
     public double PupilOpenness => (LeftPupil.Openness + RightPupil.Openness) / 2;
     public double PupilSize => (LeftPupil.Size + RightPupil.Size) / 2;
+    public Vector3D TopViewHandPalm { get; set; } = Vector3D.Zero;
+    public Vector3D TopViewHandThumb { get; set; } = Vector3D.Zero;
+    public Vector3D TopViewHandIndex { get; set; } = Vector3D.Zero;
+    public Vector3D TopViewHandMiddle { get; set; } = Vector3D.Zero;
 
     public static VdlRecord? Parse(string? text)
     {
@@ -31,7 +35,7 @@ public record class VdlRecord(
             return null;
 
         var p = text.Split('\t');
-        if (p.Length != 23)
+        if (p.Length < 23)
             return null;
 
         VdlRecord? result = null;
@@ -47,17 +51,25 @@ public record class VdlRecord(
                 new Vector3D(double.Parse(p[13]), double.Parse(p[14]), double.Parse(p[15])),
                 new Vector3D(double.Parse(p[16]), double.Parse(p[17]), double.Parse(p[18])),
                 new Vector3D(double.Parse(p[19]), double.Parse(p[20]), double.Parse(p[21])),
-                string.IsNullOrEmpty(p[22]) ? null :
-                    p[22].Split(' ') switch
+                string.IsNullOrEmpty(p[^1]) ? null :
+                    p[^1].Split(' ') switch
                     {
                         ["STR"] => new NBackTaskEvent(NBackTaskEventType.SessionStart),
                         ["SET", string id] => new NBackTaskTrial(NBackTaskEventType.TrialStart, int.Parse(id)),
                         ["ACT", string id] => new NBackTaskTrial(NBackTaskEventType.TrialResponse, int.Parse(id)),
                         ["RES", string id, string isSuccess] => new NBackTaskTrialResult(NBackTaskEventType.TrialEnd, int.Parse(id), bool.Parse(isSuccess)),
                         ["FIN"] => new NBackTaskEvent(NBackTaskEventType.SessionEnd),
-                        _ => throw new Exception($"Unknown NBackTask event: {p[22]}")
+                        _ => throw new Exception($"Unknown NBackTask event: {p[^1]}")
                     }
             );
+
+            if (p.Length == 35)
+            {
+                result.TopViewHandPalm = new Vector3D(double.Parse(p[22]), double.Parse(p[23]), double.Parse(p[24]));
+                result.TopViewHandThumb = new Vector3D(double.Parse(p[25]), double.Parse(p[26]), double.Parse(p[27]));
+                result.TopViewHandIndex = new Vector3D(double.Parse(p[28]), double.Parse(p[29]), double.Parse(p[30]));
+                result.TopViewHandMiddle = new Vector3D(double.Parse(p[31]), double.Parse(p[32]), double.Parse(p[33]));
+            }
         }
         catch
         {
@@ -66,12 +78,25 @@ public record class VdlRecord(
 
         return result;
     }
-    public static VdlRecord? FromVarjo(VarjoRecord r) => new VdlRecord(
-        r.TimestampSystem, r.TimestampUnix,
-        new Rotation(r.GazeForward.X, r.GazeForward.Y, r.GazeForward.Z),
-        Rotation.Zero,
-        new Pupil(r.Left.EyeOpenness, r.Left.PupilDiameterInMm),
-        new Pupil(r.Right.EyeOpenness, r.Right.PupilDiameterInMm),
-        Vector3D.Zero, Vector3D.Zero, Vector3D.Zero, Vector3D.Zero,
-        null);
+    public static VdlRecord? FromVarjo(VarjoRecord r)
+    {
+        if (r.Status != VarjoTrackingStatus.Tracking) return null;
+
+        double oneOverZ = 1.0 / r.GazeForward.Z;
+        var yaw = RadiansToDegrees * Math.Atan(r.GazeForward.X * oneOverZ);
+        var pitch = RadiansToDegrees * Math.Atan(r.GazeForward.Y * oneOverZ);
+
+        return new VdlRecord(
+            r.TimestampSystem, r.TimestampUnix,
+            new Rotation(pitch, yaw, 0),
+            Rotation.Zero,
+            new Pupil(r.Left.EyeOpenness, r.Left.PupilDiameterInMm),
+            new Pupil(r.Right.EyeOpenness, r.Right.PupilDiameterInMm),
+            Vector3D.Zero, Vector3D.Zero, Vector3D.Zero, Vector3D.Zero,
+            null);
+    }
+
+    //  Internal
+    
+    const double RadiansToDegrees = 180.0 / Math.PI;
 }

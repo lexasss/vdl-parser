@@ -21,20 +21,14 @@ public class Varjo
         System.Diagnostics.Debug.WriteLine($"Loading: {Path.GetFileName(filename)}");
 
         var records = new List<VarjoRecord>();
-        using var reader = new StreamReader(filename);
+        using var reader = new StreamReader(filename, new FileStreamOptions() {
+            Access = FileAccess.Read, Mode = FileMode.Open, Share = FileShare.ReadWrite });
 
-        bool skip = true;   // skip the first line (header)
+        reader.ReadLine();  // skip the first line (header)
 
         while (!reader.EndOfStream)
         {
             var line = reader.ReadLine();
-
-            if (skip)
-            {
-                skip = false;
-                continue;
-            }
-
             var record = VarjoRecord.Parse(line);
 
             if (record != null)
