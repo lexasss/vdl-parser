@@ -8,7 +8,11 @@ namespace VdlParser;
 public enum HandDataSource
 {
     IndexFinger,
-    MiddleFinger
+    MiddleFinger,
+    Palm,
+    TopViewIndexFinger,
+    TopViewMiddleFinger,
+    TopViewPalm,
 }
 
 [TypeConverter(typeof(FriendlyEnumConverter))]
@@ -127,6 +131,18 @@ public class Processor
             .ToArray(),
         HandDataSource.MiddleFinger => records
             .Select(record => new Sample(GetTimestamp(record), record.HandMiddle.Y))
+            .ToArray(),
+        HandDataSource.Palm => records
+            .Select(record => new Sample(GetTimestamp(record), record.HandPalm.Y))
+            .ToArray(),
+        HandDataSource.TopViewIndexFinger => records
+            .Select(record => new Sample(GetTimestamp(record), -record.TopViewHandIndex.Z))
+            .ToArray(),
+        HandDataSource.TopViewMiddleFinger => records
+            .Select(record => new Sample(GetTimestamp(record), -record.TopViewHandMiddle.Z))
+            .ToArray(),
+        HandDataSource.TopViewPalm => records
+            .Select(record => new Sample(GetTimestamp(record), -record.TopViewHandPalm.Z))
             .ToArray(),
         _ => throw new NotImplementedException($"{_settings.HandDataSource} hand data source is not yet supported")
     };
