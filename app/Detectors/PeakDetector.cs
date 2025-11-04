@@ -21,12 +21,18 @@ public enum PeakDirection
 public class HandPeakDetector : PeakDetector, ISettings
 {
     public string Section => nameof(HandPeakDetector);
+    public HandPeakDetector() : base() { IgnoranceThrehold = -20; }
+    public override Peak[] Find(Sample[] samples)
+    {
+        IgnoranceThrehold = -20;
+        return base.Find(samples);
+    }
 }
 
 public class GazePeakDetector : PeakDetector, ISettings
 {
     public string Section => nameof(GazePeakDetector);
-    public GazePeakDetector() { IgnoranceThrehold = -1000; }
+    public GazePeakDetector() : base() { IgnoranceThrehold = -1000; }
 }
 
 public class PeakDetector : INotifyPropertyChanged
@@ -45,7 +51,7 @@ public class PeakDetector : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public Peak[] Find(Sample[] samples)
+    public virtual Peak[] Find(Sample[] samples)
     {
         var peaks = new List<Peak>();
         var ignoranceThreshold = Direction switch
