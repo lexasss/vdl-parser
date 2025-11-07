@@ -15,11 +15,13 @@ public class Nbt(string filename, int participantId, bool isNewCtt, bool isVr, d
     public int ParticipantID => participantId;
     public string Condition => isNewCtt ? (isVr ? "nctt+vr" : "nctt") : "octt";
 
-    public static Nbt? Load(string filename)
+    public static Nbt? Load(string filename, string? cttFilename = null)
     {
+        var isHeadGazeStudy = cttFilename != null;
+
         var id = int.Parse(string.Join("", filename.Split(Path.DirectorySeparatorChar)[^3].Skip(1)) ?? "0");
-        var newCttFilename = Utils.GetCorrespondingNewCtt(filename);
-        var isVr = newCttFilename != null && CttNew.IsVR(newCttFilename);
+        var newCttFilename = cttFilename ?? Utils.GetCorrespondingNewCtt(filename);
+        var isVr = newCttFilename != null && (isHeadGazeStudy || CttNew.IsVR(newCttFilename));
         var lambda = newCttFilename != null ? Utils.GetLambda(newCttFilename) : 0;
 
         try

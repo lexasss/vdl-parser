@@ -84,6 +84,72 @@ public static class Utils
         );
     }
 
+    public static (Vdl[], IStatistics[]) LoadParticipantData(string folder)
+    {
+        var statisticsList = new List<IStatistics>();
+        var vdlList = new List<Vdl>();
+
+        string[] paceFolders = [
+            Path.Combine(folder, "self"),
+            Path.Combine(folder, "system")
+        ];
+
+        foreach (var paceFolder in paceFolders)
+        {
+            var vdlFileNames = Directory.GetFiles(paceFolder, "vdl-*.txt");
+            var cttFileNames = Directory.GetFiles(paceFolder, "ctt-*.txt");
+            var nbtFileNames = Directory.GetFiles(paceFolder, "n-back-task-*.txt");
+            var tcnFileName = Directory.GetFiles(paceFolder, "conditions-*.txt")?[0];
+
+            if (vdlFileNames.Length != cttFileNames.Length || cttFileNames.Length != nbtFileNames.Length || tcnFileName == null)
+                throw new Exception("The participant data is incomplete");
+
+            for (int i = 0; i < vdlFileNames.Length; i++)
+            {
+                var vdlFilename = vdlFileNames[i];
+                var cttFilename = cttFileNames[i];
+                var nbtFilename = nbtFileNames[i];
+
+                TestCondition testCondition = new TestCondition(vdlFilename, tcnFileName, i);
+                var vdl = Vdl.Load(vdlFilename, testCondition);
+                if (vdl != null)
+                {
+                    vdlList.Add(vdl);
+                }
+                else
+                {
+                    MessageBox.Show($"Cannot load or parse the file '{vdlFilename}'.",
+                        App.Current.MainWindow.Title, MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+
+                if (CttNew.Load(cttFilename) is IStatistics cttStatistics)
+                {
+                    statisticsList.Add(cttStatistics);
+                }
+                else
+                {
+                    MessageBox.Show($"Cannot load or parse the file '{cttFilename}'.",
+                        App.Current.MainWindow.Title, MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+
+                if (Nbt.Load(nbtFilename) is IStatistics nbtStatistics)
+                {
+                    statisticsList.Add(nbtStatistics);
+                }
+                else
+                {
+                    MessageBox.Show($"Cannot load or parse the file '{nbtFilename}'.",
+                        App.Current.MainWindow.Title, MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        return (
+            vdlList.ToArray(),
+            statisticsList.ToArray()
+        );
+    }
+
     public static bool CopySummaryToClipboard(IStatistics[] statistics, bool onlyHeaders)
     {
         string? summary = null;

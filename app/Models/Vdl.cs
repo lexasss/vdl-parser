@@ -5,33 +5,28 @@ namespace VdlParser.Models;
 public class Vdl
 {
     public string Timestamp { get; }
-    public string Participant { get; }
-    public double Lambda { get; }
     public int RecordCount { get; }
+    public TestCondition Condition { get; }
 
     public VdlRecord[] Records { get; }
 
     public PupilCalibration? PupilCalibration { get; set; } = null;
 
-    public Vdl(string timestamp, string participant, double lambda, VdlRecord[] records)
+    public Vdl(string timestamp, VdlRecord[] records, TestCondition? condition = null)
     {
         Timestamp = timestamp;
-        Participant = participant;
-        Lambda = lambda;
         RecordCount = records.Length;
 
         Records = records;
+        Condition = condition ?? new TestCondition();
     }
 
-    public static Vdl? Load(string filename)
+    public static Vdl? Load(string filename, TestCondition? testCondition = null)
     {
         long tsSystem = 0;
         long tsHeadset = 0;
 
         System.Diagnostics.Debug.WriteLine($"Loading: {Path.GetFileName(filename)}");
-
-        var newCttFilename = Utils.GetCorrespondingNewCtt(filename);
-        var lambda = newCttFilename != null ? Utils.GetLambda(newCttFilename) : 0;
 
         var records = new List<VdlRecord>();
         using var reader = new StreamReader(filename);
@@ -60,9 +55,9 @@ public class Vdl
 
         System.Diagnostics.Debug.WriteLine($"Record count: {records.Count}");
 
-        var participant = Path.GetDirectoryName(filename)?.Split(Path.DirectorySeparatorChar)[^3] ?? "";
         var timestamp = string.Join('-', Path.GetFileName(filename).Split('.')[0].Split('-')[1..]);
-        return records.Count > 0 ? new Vdl(timestamp, participant, lambda, records.ToArray()) : null;
+
+        return records.Count > 0 ? new Vdl(timestamp, records.ToArray(), testCondition) : null;
     }
 
     public static Vdl? FromVarjo(Varjo varjo)
@@ -97,6 +92,6 @@ public class Vdl
 
         System.Diagnostics.Debug.WriteLine($"Record count: {records.Count}");
 
-        return records.Count > 0 ? new Vdl(varjo.Timestamp, string.Empty, 0, records.ToArray()) : null;
+        return records.Count > 0 ? new Vdl(varjo.Timestamp, records.ToArray()) : null;
     }
 }

@@ -85,6 +85,11 @@ public class CttNew(string filename, int participantId, bool isVr, CttNewRecord[
     {
         var folder = Path.GetDirectoryName(cttFilename) ?? "";
         var vdlFolder = Path.Combine(folder, "VDL");
+        if (!Directory.Exists(vdlFolder))
+        {
+            return false;
+        }
+
         var vdlFiles = Directory.GetFiles(vdlFolder);
 
         cttFilename = Path.GetFileNameWithoutExtension(cttFilename);

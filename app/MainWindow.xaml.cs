@@ -1,4 +1,6 @@
-﻿using System.Windows;
+﻿using Microsoft.Win32;
+using System.Security.Cryptography;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
@@ -52,7 +54,7 @@ public partial class MainWindow : Window
     {
         if (e.Key == Key.F2)
         {
-            Load_Click(sender, new RoutedEventArgs());
+            LoadCttCompData_Click(sender, new RoutedEventArgs());
         }
     }
 
@@ -98,7 +100,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void Load_Click(object sender, RoutedEventArgs e)
+    private void LoadCttCompData_Click(object sender, RoutedEventArgs e)
     {
         var ofd = new Microsoft.Win32.OpenFileDialog()
         {
@@ -120,6 +122,34 @@ public partial class MainWindow : Window
 
             var summary = _statistics.Select(statistics => string.Join('\n', statistics.Get(Models.Format.List)));
             txbSummary.Text = string.Join("\n\n", summary);
+
+            lsbVdls.Focus();
+        }
+    }
+
+    private void LoadHeadGazeData_Click(object sender, RoutedEventArgs e)
+    {
+        var folderDialog = new OpenFolderDialog
+        {
+            Title = "Select a participant folder"
+        };
+
+        if (folderDialog.ShowDialog() == true)
+        {
+            try
+            {
+                (var vdlList, _statistics) = Utils.LoadParticipantData(folderDialog.FolderName);
+
+                Vdls.Add(vdlList);
+
+                var summary = _statistics.Select(statistics => string.Join('\n', statistics.Get(Models.Format.List)));
+                txbSummary.Text = string.Join("\n\n", summary);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: '{ex.Message}'.",
+                    App.Current.MainWindow.Title, MessageBoxButton.OK, MessageBoxImage.Error);
+            }
 
             lsbVdls.Focus();
         }
