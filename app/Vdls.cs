@@ -24,6 +24,11 @@ public class Vdls : INotifyPropertyChanged
         Items = new ObservableCollection<Vdl>(_vdls);
     }
 
+    public void Clear()
+    {
+        Items.Clear();
+    }
+
     public void Add(Vdl vdl)
     {
         Items.Add(vdl);

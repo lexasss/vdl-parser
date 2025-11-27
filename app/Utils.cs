@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Text;
 using System.Windows;
 using VdlParser.Models;
 
@@ -84,6 +85,13 @@ public static class Utils
         );
     }
 
+    /// <summary>
+    /// Load all participant data of the HeadGaze study.
+    /// The data must is stored in two folders, "self" and "system"
+    /// </summary>
+    /// <param name="folder">Particpant's data root folder (P??)</param>
+    /// <returns>Vdl + CTT and NBT statistics</returns>
+    /// <exception cref="Exception">Throws if VDL, CTT and NBT file number is not same</exception>
     public static (Vdl[], IStatistics[]) LoadParticipantData(string folder)
     {
         var statisticsList = new List<IStatistics>();
@@ -116,7 +124,7 @@ public static class Utils
                 {
                     vdlList.Add(vdl);
                 }
-                else
+                else if (App.Current.Dispatcher.Thread == Thread.CurrentThread)
                 {
                     MessageBox.Show($"Cannot load or parse the file '{vdlFilename}'.",
                         App.Current.MainWindow.Title, MessageBoxButton.OK, MessageBoxImage.Error);
@@ -126,7 +134,7 @@ public static class Utils
                 {
                     statisticsList.Add(cttStatistics);
                 }
-                else
+                else if (App.Current.Dispatcher.Thread == Thread.CurrentThread)
                 {
                     MessageBox.Show($"Cannot load or parse the file '{cttFilename}'.",
                         App.Current.MainWindow.Title, MessageBoxButton.OK, MessageBoxImage.Error);
@@ -136,7 +144,7 @@ public static class Utils
                 {
                     statisticsList.Add(nbtStatistics);
                 }
-                else
+                else if (App.Current.Dispatcher.Thread == Thread.CurrentThread)
                 {
                     MessageBox.Show($"Cannot load or parse the file '{nbtFilename}'.",
                         App.Current.MainWindow.Title, MessageBoxButton.OK, MessageBoxImage.Error);
@@ -150,42 +158,70 @@ public static class Utils
         );
     }
 
-    public static bool CopySummaryToClipboard(IStatistics[] statistics, bool onlyHeaders)
+    public static void CopyStatisticsToClipboard(string folder)
+    {
+        var folders = Directory.GetDirectories(folder, "P??");
+        System.Diagnostics.Debug.WriteLine($"Loading all {folders.Length} participants");
+
+        var statisticsList = new List<IStatistics>();
+
+        foreach (var pf in folders)
+        {
+            (var vdlList, _) = LoadParticipantData(pf);
+            System.Diagnostics.Debug.WriteLine($"Participant {pf.Split('\\')[^1]}");
+
+            foreach (var vdl in vdlList)
+            {
+                var p = new Processor();
+                p.SetVdl(vdl);
+                p.Process();
+
+                var statistics = new VdlStatistics(p);
+                statisticsList.Add(statistics);
+            }
+        }
+
+        var table = CreateSummary(statisticsList.ToArray(), onlyHeaders: false);
+
+        var data = string.Join("\n", table);
+        App.Current.Dispatcher?.Invoke(() =>
+        {
+            Clipboard.SetText(data);
+        });
+
+        System.Diagnostics.Debug.WriteLine("Done");
+    }
+
+    public static void CopyStatisticsToClipboard(Vdl[] vdls)
+    {
+        var statisticsList = new List<IStatistics>();
+
+        foreach (var vdl in vdls)
+        {
+            var p = new Processor();
+            p.SetVdl(vdl);
+            p.Process();
+
+            var statistics = new VdlStatistics(p);
+            statisticsList.Add(statistics);
+        }
+
+        var table = CreateSummary(statisticsList.ToArray(), onlyHeaders: false);
+
+        var data = string.Join("\n", table);
+        App.Current.Dispatcher?.Invoke(() =>
+        {
+            Clipboard.SetText(data);
+        });
+    }
+
+    public static bool CopyStatisticsToClipboard(IStatistics[] statistics, bool onlyHeaders)
     {
         string? summary = null;
 
         if (statistics.Length > 0)
         {
-            var table = new List<string[]>();
-            foreach (var stat in statistics)
-            {
-                table.Add(stat.Get(
-                        onlyHeaders ?
-                            Format.RowHeaders :
-                            Format.Rows)
-                    .Split('\n')
-                    .ToArray()
-                );
-
-                if (onlyHeaders)
-                    break;
-            }
-
-            var rowCount = table.Max(col => col.Length);
-            var formattedTable = new string[rowCount, table.Count];
-            for (int col = 0; col < table.Count; col++)
-            {
-                var column = table[col];
-                for (int row = 0; row < column.Length; row++)
-                    formattedTable[row, col] = column[row];
-            }
-
-            var result = new List<object>();
-            var index = 0;
-            foreach (var el in formattedTable)
-                result.AddRange([el, (++index % statistics.Length) == 0 ? '\n' : '\t']);
-
-            summary = string.Join("", result);
+            summary = string.Join("\n", CreateSummary(statistics, onlyHeaders));
         }
         else
         {
@@ -194,5 +230,48 @@ public static class Utils
 
         Clipboard.SetText(summary);
         return true;
+    }
+
+
+    // Internal
+
+    private static string[] CreateSummary(IStatistics[] statistics, bool onlyHeaders)
+    {
+        var table = new List<string[]>();
+        foreach (var stat in statistics)
+        {
+            table.Add(stat.Get(
+                    onlyHeaders ?
+                        Format.RowHeaders :
+                        Format.Rows)
+                .Split('\n')
+                .ToArray()
+            );
+
+            if (onlyHeaders)
+                break;
+        }
+
+        var rowCount = table.Max(col => col.Length);
+        var formattedTable = new StringBuilder[rowCount];
+        for (int row = 0; row < formattedTable.Length; row++)
+            formattedTable[row] = new StringBuilder();
+
+        for (int col = 0; col < table.Count; col++)
+        {
+            var column = table[col];
+            for (int row = 0; row < column.Length; row++)
+            {
+                if (col > 0)
+                    formattedTable[row].Append("\t");
+
+                var value = column[row];
+                if (value == "." || value == "NaN")
+                    value = "";
+                formattedTable[row].Append(value);
+            }
+        }
+
+        return formattedTable.Select(sb => string.Join("\t", sb)).ToArray();
     }
 }

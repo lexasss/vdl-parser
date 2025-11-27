@@ -109,7 +109,7 @@ public class BlinkDetector2 : ISettings
                     debugMsg = ">> blink";
                 }
 
-                System.Diagnostics.Debug.WriteLine($"[{i}] {ts} > Gap {interval} ms {debugMsg} {confOfPeakInGazeData:F3} * {confOfPeakInPupilSize:F3} * {confOfPeakInPupilOpenness:F3}");
+                //System.Diagnostics.Debug.WriteLine($"[{i}] {ts} > Gap {interval} ms {debugMsg} {confOfPeakInGazeData:F3} * {confOfPeakInPupilSize:F3} * {confOfPeakInPupilOpenness:F3}");
             }
 
             lastTimestamp = ts;

@@ -26,6 +26,8 @@ public class Vdl
         long tsSystem = 0;
         long tsHeadset = 0;
 
+        NBackTaskEvent? nbtEvent = null;
+
         System.Diagnostics.Debug.WriteLine($"Loading: {Path.GetFileName(filename)}");
 
         var records = new List<VdlRecord>();
@@ -34,9 +36,9 @@ public class Vdl
         while (!reader.EndOfStream)
         {
             var line = reader.ReadLine();
-            var record = VdlRecord.Parse(line);
+            var obj = VdlRecord.Parse(line);
 
-            if (record != null)
+            if (obj is VdlRecord record)
             {
                 if (tsSystem == 0)
                 {
@@ -49,7 +51,18 @@ public class Vdl
                     TimestampSystem = record.TimestampSystem - tsSystem,
                     TimestampHeadset = record.TimestampHeadset - tsHeadset,
                 };
+
+                if (nbtEvent != null && newRec.NBackTaskEvent == null)   // fixes issue where NBackTaskEvent appears on a separate line
+                {
+                    newRec = newRec with { NBackTaskEvent = nbtEvent };
+                    nbtEvent = null;
+                }
+
                 records.Add(newRec);
+            }
+            else if (obj is NBackTaskEvent trialStartEvent)
+            {
+                nbtEvent = trialStartEvent;
             }
         }
 

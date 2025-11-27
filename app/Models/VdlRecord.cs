@@ -29,12 +29,15 @@ public record class VdlRecord(
     public Vector3D TopViewHandIndex { get; set; } = Vector3D.Zero;
     public Vector3D TopViewHandMiddle { get; set; } = Vector3D.Zero;
 
-    public static VdlRecord? Parse(string? text)
+    public static object? Parse(string? text)
     {
         if (string.IsNullOrEmpty(text))
             return null;
 
         var p = text.Split('\t');
+
+        if (p.Length == 1 && p[0].StartsWith("SET "))    // fixes the VDL+NBT recording bug
+            return new NBackTaskTrial(NBackTaskEventType.TrialStart, int.Parse(text.Split(' ')[1]));
         if (p.Length < 23)
             return null;
 
@@ -78,6 +81,7 @@ public record class VdlRecord(
 
         return result;
     }
+
     public static VdlRecord? FromVarjo(VarjoRecord r)
     {
         if (r.Status != VarjoTrackingStatus.Tracking) return null;

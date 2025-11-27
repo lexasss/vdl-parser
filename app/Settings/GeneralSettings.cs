@@ -17,6 +17,11 @@ public class GeneralSettings : ISettings
     public GazeDataSource GazeDataSource { get; set; } = GazeDataSource.PitchRotation;
     public TimestampSource TimestampSource { get; set; } = TimestampSource.System;
     public int MaxHandGazeDelay { get; set; } = 1500; // ms
+    public int MaxTrialStartToGazePeakStartInterval { get; set; } = 250; // ms, the glance can start up to this interval before the trial starts (the audio instruction is over)
+    public int MaxGazePeakEndToNextTrialStartInterval { get; set; } = 250; // ms, the glance can end this much delayed inside the next trial
+    public int MaxGazePeakStartToHandPeakStartInterval { get; set; } = 750; // ms, the glance can start no later than 750 after the hand peak started
+    public int MinResponseToGazePeakStartInterval { get; set; } = 250; // ms, the glance cannot start very close or after to the time the response was given
+    public double MaxInvalidHandDataShare { get; set; } = 0.8;      // share of invalid data in hand data during a trial above which the trial is considered invalid
     public double QuantileThreshold { get; set; } = 0.1;
 
     /// <summary>

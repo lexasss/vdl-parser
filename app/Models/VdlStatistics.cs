@@ -6,10 +6,15 @@ public class VdlStatistics(Processor processor) : IStatistics
 {
     public string Get(Format format)
     {
-        var gazeHandMatches = processor.Trials
-            .Where(trial => trial.HasHandGazeMatch);
+        var sessionStartTimestamp = processor.NBackTaskEvents.FirstOrDefault(evt => evt.Event.Type == NBackTaskEventType.SessionStart)?.Timestamp ?? 0;
+        var sessionEndTimestamp = processor.NBackTaskEvents.FirstOrDefault(evt => evt.Event.Type == NBackTaskEventType.SessionEnd)?.Timestamp ?? processor.Trials[^1].ResponseTimestamp;
+
+        var trialsWithValidData = processor.Trials.Where(trial => trial.HasValidData);
+
+        var gazeHandMatches = trialsWithValidData.Where(trial => trial.HasHandGazeMatch);
         var gazeHandMatchCount = gazeHandMatches.Count();
-        var matchesCountPercentage = 100.0 * gazeHandMatchCount / processor.Trials.Count();
+        var matchesCountPercentage = 100.0 * gazeHandMatchCount / trialsWithValidData.Count();
+
         var responseIntervals = processor.Trials
             .Where(trial => trial.ResponseTimestamp > 0)
             .Select(trial => (double)(trial.ResponseTimestamp - trial.StartTimestamp));
@@ -27,11 +32,15 @@ public class VdlStatistics(Processor processor) : IStatistics
         var tb = new TemproralBids();
         var gazeHandIntervalBids = tb.Get(gazeHandMatches
                 .Select(trial => new Timestamped(trial.StartTimestamp, -trial.GazeHandInterval))
-                .ToArray())
+                .ToArray(),
+                sessionStartTimestamp,
+                sessionEndTimestamp)
             .Select(bid => Math.Round(bid.Mean));
         var matchBids = tb.Get(processor.Trials
                 .Select(trial => new Timestamped(trial.StartTimestamp, trial.HasHandGazeMatch ? 1 : 0))
-                .ToArray())
+                .ToArray(),
+                sessionStartTimestamp,
+                sessionEndTimestamp)
             .Select(bid => bid.Mean).ToArray();
         var correctResponses = (double)processor.Trials.Sum(trial => trial.IsCorrect ? 1 : 0) / processor.Trials.Length;
         var calibratedPupilSizes = processor.PupilSizes.Select(size => size - (processor.Vdl?.PupilCalibration?.Size ?? 0));
@@ -42,7 +51,7 @@ public class VdlStatistics(Processor processor) : IStatistics
         var ql = GeneralSettings.Instance.QuantileThreshold;
         var qh = 1.0 - ql;
 
-        string[] emptyBids = [".", ".", ".", ".", "."];
+        string[] emptyBids = [NODATA, NODATA, NODATA, NODATA, NODATA];
 
         if (format == Format.List)
             return string.Join('\n', [
@@ -70,39 +79,48 @@ public class VdlStatistics(Processor processor) : IStatistics
             ]);
         else if (format == Format.Rows || format == Format.RowHeaders)
         {
-            var peakCountThreshold = 10;
-
             var matchBidsStr = matchBids.Select(v => v.ToString()).ToArray();
             var gazeHandIntervalBidsStr = gazeHandIntervalBids.Select(v => v.ToString()).ToArray();
 
             (string, object)[] rows = [
-                ("Hand peaks", processor.HandPeaks.Length < peakCountThreshold ? "." : processor.HandPeaks.Length),
-                ("Gaze peaks", processor.GazePeaks.Length < peakCountThreshold ? "." : processor.GazePeaks.Length),
-                ("Peak matches, %", processor.HandPeaks.Length < peakCountThreshold ? "." : matchesCountPercentage),
+                ("Pace", processor.Vdl?.Condition.Pace ?? ""),
+                ("Lambda", processor.Vdl?.Condition.Lambda ?? 0),
+                ("Layout", processor.Vdl?.Condition.Layout ?? ""),
+                ("Digits", processor.Vdl?.Condition.Digits ?? 0),
+
+                ("Hand peaks", processor.HandPeaks.Length),
+                ("Gaze peaks", processor.GazePeaks.Length),
+                ("Peak matches, %", matchesCountPercentage),
                 ($"{string.Join('\n', matchBids.Select((_, i) => $"Peak matches, bid {i+1}"))}",
-                 $"{string.Join('\n', processor.HandPeaks.Length < peakCountThreshold ? emptyBids : matchBidsStr)}"),
+                 $"{string.Join('\n', matchBidsStr)}"),
+
                 ("Response time, mean", responseIntervalMean),
                 ("Response time, SD", responseIntervalStd),
-                ("Response time, median", responseIntervals.Median()),
-                ($"Response time, quantile {ql*100:F0}%", responseIntervals.Quantile(ql)),
-                ($"Response time, quantile {qh*100:F0}%", responseIntervals.Quantile(qh)),
-                ("Gaze-hand advance, mean", double.IsNaN(gazeHandIntervalMean) ? "." : gazeHandIntervalMean),
-                ("Gaze-hand advance, SD", double.IsNaN(gazeHandIntervalStd) ? "." : gazeHandIntervalStd),
-                ("Gaze-hand advance, median", double.IsNaN(gazeHandIntervalMedian) ? "." : gazeHandIntervalMedian),
-                ($"Gaze-hand advance, quantile {ql*100:F0}%", double.IsNaN(gazeHandIntervalMean) ? "." : gazeHandIntervals.Quantile(ql)),
-                ($"Gaze-hand advance, quantile {qh*100:F0}%", double.IsNaN(gazeHandIntervalMean) ? "." : gazeHandIntervals.Quantile(qh)),
+                ("Response time, median", responseIntervals.Count() == 0 ? NODATA : responseIntervals.Median()),
+                ($"Response time, quantile {ql*100:F0}%", responseIntervals.Count() == 0 ? NODATA : responseIntervals.Quantile(ql)),
+                ($"Response time, quantile {qh*100:F0}%", responseIntervals.Count() == 0 ? NODATA : responseIntervals.Quantile(qh)),
+
+                ("Gaze-hand advance, mean", double.IsNaN(gazeHandIntervalMean) ? NODATA : gazeHandIntervalMean),
+                ("Gaze-hand advance, SD", double.IsNaN(gazeHandIntervalStd) ? NODATA : gazeHandIntervalStd),
+                ("Gaze-hand advance, median", double.IsNaN(gazeHandIntervalMedian) ? NODATA : gazeHandIntervalMedian),
+                ($"Gaze-hand advance, quantile {ql*100:F0}%", double.IsNaN(gazeHandIntervalMean) ? NODATA : gazeHandIntervals.Quantile(ql)),
+                ($"Gaze-hand advance, quantile {qh*100:F0}%", double.IsNaN(gazeHandIntervalMean) ? NODATA : gazeHandIntervals.Quantile(qh)),
+
                 ($"{string.Join('\n', gazeHandIntervalBids.Select((_, i) => $"Gaze-hand advance, bid {i+1}"))}",
                  $"{string.Join('\n', gazeHandIntervalBids.Count() < 5 ? emptyBids : gazeHandIntervalBidsStr)}"),
+
                 ("Glance duration, mean", glanceDurationMean),
                 ("Glance duration, SD", glanceDurationStd),
                 ("Glance duration, median", glanceDurations.Median()),
                 ($"Glance duration, quantile {ql*100:F0}%", glanceDurations.Quantile(ql)),
                 ($"Glance duration, quantile {qh*100:F0}%", glanceDurations.Quantile(qh)),
+
                 ("Pupil size, mean", pupilSizeMean),
                 ("Pupil size, SD", pupilSizeStd),
                 ("Pupil size, median", processor.PupilSizes.Median()),
                 ($"Pupil size, quantile {ql*100:F0}%", processor.PupilSizes.Quantile(ql)),
                 ($"Pupil size, quantile {qh*100:F0}%", processor.PupilSizes.Quantile(qh)),
+
                 ("Eye losses", processor.GazeDataMisses.Length),
                 ("Blinks", blinkCount),
                 ("Long eye losses", longEyeLostCount),
@@ -117,4 +135,9 @@ public class VdlStatistics(Processor processor) : IStatistics
 
         return "";
     }
+
+
+    // Internal
+
+    const string NODATA = ".";
 }

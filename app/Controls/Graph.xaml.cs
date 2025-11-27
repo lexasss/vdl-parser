@@ -1,4 +1,5 @@
-﻿using ScottPlot;
+﻿using MathNet.Numerics;
+using ScottPlot;
 using System.ComponentModel;
 using System.Windows.Controls;
 using VdlParser.Detectors;
@@ -140,8 +141,9 @@ public partial class Graph : UserControl, INotifyPropertyChanged
         var markerY = processor.HandSamples.Max(sample => sample.Value) + 5;
         foreach (var (ts, nbte) in processor.NBackTaskEvents)
         {
-            chart.Plot.AddMarker(ts, markerY, size: 12, color: NBackTaskEventColor(nbte.Type),
-                label: EnsureSingle(NBackTaskEventLabel(nbte.Type)));
+            var trial = processor.Trials.FirstOrDefault(trial => trial.StartTimestamp == ts);
+            var (color, label) = NBackTaskEventLabelProps(nbte.Type, trial);
+            chart.Plot.AddMarker(ts, markerY, size: 12, color: color, label: EnsureSingle(label));
         }
 
         Render();
@@ -187,21 +189,42 @@ public partial class Graph : UserControl, INotifyPropertyChanged
         _ => (System.Drawing.Color.Black, "")
     };
 
-    private System.Drawing.Color NBackTaskEventColor(NBackTaskEventType type) => type switch
+    private static (System.Drawing.Color, string?) NBackTaskEventLabelProps(NBackTaskEventType type, Trial? trial)
     {
-        NBackTaskEventType.SessionStart or NBackTaskEventType.SessionEnd => System.Drawing.Color.Green,
-        NBackTaskEventType.TrialStart => System.Drawing.Color.Purple,
-        NBackTaskEventType.TrialResponse => System.Drawing.Color.Orange,
-        NBackTaskEventType.TrialEnd => System.Drawing.Color.Blue,
-        _ => System.Drawing.Color.Black
-    };
+        bool hasHandGazeMatch = false;
+        bool isTrialValid = true;
+        if (type == NBackTaskEventType.TrialStart && trial != null)
+        {
+            isTrialValid = trial.HasValidData;
+            hasHandGazeMatch = trial.HasHandGazeMatch;
+        }
+        var color = type switch
+        {
+            NBackTaskEventType.SessionStart or NBackTaskEventType.SessionEnd => System.Drawing.Color.Green,
+            NBackTaskEventType.TrialStart => (isTrialValid, hasHandGazeMatch) switch {
+                (true, true) => System.Drawing.Color.Purple,
+                (true, false) => System.Drawing.Color.MediumPurple,
+                _ => System.Drawing.Color.Red,
+            },
+            NBackTaskEventType.TrialResponse => System.Drawing.Color.Orange,
+            NBackTaskEventType.TrialEnd => System.Drawing.Color.Blue,
+            _ => System.Drawing.Color.Black
+        };
+        var label = type switch
+        {
+            NBackTaskEventType.SessionStart or NBackTaskEventType.SessionEnd => "Session start/end",
+            NBackTaskEventType.TrialStart => (isTrialValid, hasHandGazeMatch) switch
+            {
+                (true, true) => "Trial start",
+                (true, false) => "Trial start: no-match trial",
+                _ => "Trial start: invalid trial",
+            },
+            NBackTaskEventType.TrialResponse => "Response",
+            NBackTaskEventType.TrialEnd => "Trial end",
+            _ => null
+        };
 
-    private string? NBackTaskEventLabel(NBackTaskEventType type) => type switch
-    {
-        NBackTaskEventType.SessionStart or NBackTaskEventType.SessionEnd => "Session start/end",
-        NBackTaskEventType.TrialStart => "Trial start",
-        NBackTaskEventType.TrialResponse => "Response",
-        NBackTaskEventType.TrialEnd => "Trial end",
-        _ => null
-    };
+
+        return (color, label);
+    }
 }

@@ -20,9 +20,12 @@
     <Window.Resources>
         <local:ObjectToBoolConverter x:Key="obj2bool"/>
         <local:StringToBoolConverter x:Key="str2bool"/>
+        <local:CountToBoolConverter x:Key="count2bool"/>
         <local:BoolToVisibilityConverter x:Key="bool2vis"/>
         <local:BoolToNumberConverter x:Key="bool2num"/>
         <local:NumberToGridLengthConverter x:Key="num2gl"/>
+        <local:HandPeakDetectionMethodToBoolConverter x:Key="hpdm2bool"/>
+
         <sys:Boolean x:Key="true">True</sys:Boolean>
         <sys:Boolean x:Key="false">False</sys:Boolean>
         <sys:Double x:Key="settingsPanelWidth">250</sys:Double>
@@ -164,6 +167,34 @@
             </Setter>
         </Style>
 
+        <Style x:Key="CompactMenuItemStyle" TargetType="MenuItem">
+            <Setter Property="OverridesDefaultStyle" Value="True" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="MenuItem">
+                        <Border Name="Border"
+                                Background="Transparent"
+                                Padding="4,4">
+                            <ContentPresenter ContentSource="Header"
+                                              Margin="0"
+                                              VerticalAlignment="Center"
+                                              HorizontalAlignment="Center"
+                                              RecognizesAccessKey="True" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#FFDDDDDD"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Foreground" Value="#888"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <ControlTemplate x:Key="CopySign" TargetType="ContentControl">
             <Grid>
                 <TextBlock Margin="-2,-2,0,0" Foreground="White">▮</TextBlock>
@@ -204,6 +235,15 @@
                 <x:Type TypeName="det:PeakDirection"/>
             </ObjectDataProvider.MethodParameters>
         </ObjectDataProvider>
+
+        <ObjectDataProvider x:Key="HandPeakDetectionMethodProvider"
+                            MethodName="GetValues"
+                            ObjectType="{x:Type sys:Enum}">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="det:HandPeakDetectionMethod"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+
     </Window.Resources>
 
     <Grid>
@@ -389,6 +429,7 @@
                                 </Style>
                                 <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
                                     <Setter Property="FontWeight" Value="Normal"/>
+                                    <EventSetter Event="KeyUp" Handler="AnalyzerSetting_KeyUp" />
                                 </Style>
                                 <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
                                     <Setter Property="FontWeight" Value="Normal"/>
@@ -404,6 +445,9 @@
                                         <RowDefinition/>
                                         <RowDefinition/>
                                         <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
                                     </Grid.RowDefinitions>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="{Binding Source={StaticResource settingsLabelWidth}, Converter={StaticResource num2gl}}"/>
@@ -413,24 +457,39 @@
                                     <Label Grid.Row="0" Grid.Column="0"
                                            Content="Buffer size"/>
                                     <TextBox Grid.Row="0" Grid.Column="1"
-                                             Text="{Binding BufferSize, Mode=TwoWay}"/>
+                                             Text="{Binding BufferSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                     <Label Grid.Row="1" Grid.Column="0"
-                                           Content="Peak relative threshold"/>
+                                           Content="Speed threshold"/>
                                     <TextBox Grid.Row="1" Grid.Column="1"
-                                             Text="{Binding PeakThreshold, Mode=TwoWay}"/>
+                                             Text="{Binding PeakThreshold, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                     <Label Grid.Row="2" Grid.Column="0"
-                                           Content="Max peak duration (ms)"/>
+                                           IsEnabled="{Binding ElementName=cmbHandPeakDetectorMethod, Path=SelectedItem, Converter={StaticResource hpdm2bool}, ConverterParameter={x:Static det:HandPeakDetectionMethod.ResponseBased}}"
+                                           Content="Min peak height"/>
                                     <TextBox Grid.Row="2" Grid.Column="1"
-                                             Text="{Binding MaxPeakDuration, Mode=TwoWay}"/>
+                                             IsEnabled="{Binding ElementName=cmbHandPeakDetectorMethod, Path=SelectedItem, Converter={StaticResource hpdm2bool}, ConverterParameter={x:Static det:HandPeakDetectionMethod.ResponseBased}}"
+                                             Text="{Binding MinPeakHeight, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                     <Label Grid.Row="3" Grid.Column="0"
-                                           Content="Min inter-peak interval (ms)"/>
+                                           Content="Min peak duration (ms)"/>
                                     <TextBox Grid.Row="3" Grid.Column="1"
-                                             Text="{Binding MinInterPeakInterval, Mode=TwoWay}"/>
+                                             Text="{Binding MinPeakDuration, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                     <Label Grid.Row="4" Grid.Column="0"
+                                           Content="Max peak duration (ms)"/>
+                                    <TextBox Grid.Row="4" Grid.Column="1"
+                                             Text="{Binding MaxPeakDuration, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <Label Grid.Row="5" Grid.Column="0"
+                                           Content="Min inter-peak interval (ms)"/>
+                                    <TextBox Grid.Row="5" Grid.Column="1"
+                                             Text="{Binding MinInterPeakInterval, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <Label Grid.Row="6" Grid.Column="0"
                                            Content="Peak direction"/>
-                                    <ComboBox Grid.Row="4" Grid.Column="1"
+                                    <ComboBox Grid.Row="6" Grid.Column="1"
                                               ItemsSource="{Binding Source={StaticResource PeakDirectionProvider}}"
                                               SelectedItem="{Binding Direction, Mode=TwoWay}"/>
+                                    <Label Grid.Row="7" Grid.Column="0"
+                                           Content="Detection method"/>
+                                    <ComboBox x:Name="cmbHandPeakDetectorMethod" Grid.Row="7" Grid.Column="1"
+                                              ItemsSource="{Binding Source={StaticResource HandPeakDetectionMethodProvider}}"
+                                              SelectedItem="{Binding HandPeakDetectionMethod, Mode=TwoWay}"/>
                                 </Grid>
                             </Expander>
 
@@ -445,6 +504,7 @@
                                         <RowDefinition/>
                                         <RowDefinition/>
                                         <RowDefinition/>
+                                        <RowDefinition/>
                                     </Grid.RowDefinitions>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="{Binding Source={StaticResource settingsLabelWidth}, Converter={StaticResource num2gl}}"/>
@@ -454,22 +514,26 @@
                                     <Label Grid.Row="0" Grid.Column="0"
                                            Content="Buffer size"/>
                                     <TextBox Grid.Row="0" Grid.Column="1"
-                                             Text="{Binding BufferSize, Mode=TwoWay}"/>
+                                             Text="{Binding BufferSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                     <Label Grid.Row="1" Grid.Column="0"
-                                           Content="Peak relative threshold"/>
+                                           Content="Speed threshold"/>
                                     <TextBox Grid.Row="1" Grid.Column="1"
-                                             Text="{Binding PeakThreshold, Mode=TwoWay}"/>
+                                             Text="{Binding PeakThreshold, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                     <Label Grid.Row="2" Grid.Column="0"
-                                           Content="Max peak duration (ms)"/>
+                                           Content="Min peak duration (ms)"/>
                                     <TextBox Grid.Row="2" Grid.Column="1"
-                                             Text="{Binding MaxPeakDuration, Mode=TwoWay}"/>
+                                             Text="{Binding MinPeakDuration, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                     <Label Grid.Row="3" Grid.Column="0"
-                                           Content="Min inter-peak interval (ms)"/>
+                                           Content="Max peak duration (ms)"/>
                                     <TextBox Grid.Row="3" Grid.Column="1"
-                                             Text="{Binding MinInterPeakInterval, Mode=TwoWay}"/>
+                                             Text="{Binding MaxPeakDuration, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                     <Label Grid.Row="4" Grid.Column="0"
+                                           Content="Min inter-peak interval (ms)"/>
+                                    <TextBox Grid.Row="4" Grid.Column="1"
+                                             Text="{Binding MinInterPeakInterval, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <Label Grid.Row="5" Grid.Column="0"
                                            Content="Peak direction"/>
-                                    <ComboBox Grid.Row="4" Grid.Column="1"
+                                    <ComboBox Grid.Row="5" Grid.Column="1"
                                               ItemsSource="{Binding Source={StaticResource PeakDirectionProvider}}"
                                               SelectedItem="{Binding Direction, Mode=TwoWay}"/>
                                 </Grid>
@@ -496,27 +560,27 @@
                                     <Label Grid.Row="0" Grid.Column="0"
                                            Content="Min blink duration (ms)"/>
                                     <TextBox Grid.Row="0" Grid.Column="1"
-                                             Text="{Binding BlinkMinDuration, Mode=TwoWay}"/>
+                                             Text="{Binding BlinkMinDuration, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                     <Label Grid.Row="1" Grid.Column="0"
                                            Content="Max blink duration (ms)"/>
                                     <TextBox Grid.Row="1" Grid.Column="1"
-                                             Text="{Binding BlinkMaxDuration, Mode=TwoWay}"/>
+                                             Text="{Binding BlinkMaxDuration, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                     <Label Grid.Row="2" Grid.Column="0"
                                            Content="Min gaze-lost duration (ms)"/>
                                     <TextBox Grid.Row="2" Grid.Column="1"
-                                             Text="{Binding MinGazeLostInterval, Mode=TwoWay}"/>
+                                             Text="{Binding MinGazeLostInterval, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                     <Label Grid.Row="3" Grid.Column="0"
                                            Content="Max interval to collapse (ms)"/>
                                     <TextBox Grid.Row="3" Grid.Column="1"
-                                             Text="{Binding MergeInterval, Mode=TwoWay}"/>
+                                             Text="{Binding MergeInterval, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                     <Label Grid.Row="4" Grid.Column="0"
                                            Content="Blink max level difference"/>
                                     <TextBox Grid.Row="4" Grid.Column="1"
-                                             Text="{Binding BlinkMaxLevelDifference, Mode=TwoWay}"/>
+                                             Text="{Binding BlinkMaxLevelDifference, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                     <Label Grid.Row="5" Grid.Column="0"
                                            Content="Level difference buffer size"/>
                                     <TextBox Grid.Row="5" Grid.Column="1"
-                                             Text="{Binding LevelDifferenceBufferSize, Mode=TwoWay}"/>
+                                             Text="{Binding LevelDifferenceBufferSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                 </Grid>
                             </Expander>
 
@@ -542,40 +606,44 @@
                                     <Label Grid.Row="0" Grid.Column="0"
                                            Content="Min blink duration (ms)"/>
                                     <TextBox Grid.Row="0" Grid.Column="1"
-                                             Text="{Binding BlinkMinDuration, Mode=TwoWay}"/>
+                                             Text="{Binding BlinkMinDuration, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                     <Label Grid.Row="1" Grid.Column="0"
                                            Content="Max blink duration (ms)"/>
                                     <TextBox Grid.Row="1" Grid.Column="1"
-                                             Text="{Binding BlinkMaxDuration, Mode=TwoWay}"/>
+                                             Text="{Binding BlinkMaxDuration, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                     <Label Grid.Row="2" Grid.Column="0"
                                            Content="Buffer size"/>
                                     <TextBox Grid.Row="2" Grid.Column="1"
-                                             Text="{Binding BufferSize, Mode=TwoWay}"/>
+                                             Text="{Binding BufferSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                     <Label Grid.Row="3" Grid.Column="0"
                                            Content="Threshold, eye rotation"/>
                                     <TextBox Grid.Row="3" Grid.Column="1"
-                                             Text="{Binding ThresholdEyeRotation, Mode=TwoWay}"/>
+                                             Text="{Binding ThresholdEyeRotation, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                     <Label Grid.Row="4" Grid.Column="0"
                                            Content="Threshold, pupil size"/>
                                     <TextBox Grid.Row="4" Grid.Column="1"
-                                             Text="{Binding ThresholdPupilSize, Mode=TwoWay}"/>
+                                             Text="{Binding ThresholdPupilSize, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                     <Label Grid.Row="5" Grid.Column="0"
                                            Content="Threshold, pupil openness"/>
                                     <TextBox Grid.Row="5" Grid.Column="1"
-                                             Text="{Binding ThresholdPupilOpenness, Mode=TwoWay}"/>
+                                             Text="{Binding ThresholdPupilOpenness, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                     <Label Grid.Row="6" Grid.Column="0"
                                            Content="Threshold, confidence"/>
                                     <TextBox Grid.Row="6" Grid.Column="1"
-                                             Text="{Binding ThresholdConfidence, Mode=TwoWay}"/>
+                                             Text="{Binding ThresholdConfidence, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                 </Grid>
                             </Expander>
 
                             <Separator/>
 
-                            <Expander Header="Other"
-                                      IsExpanded="{Binding Path=UiState.AreOtherSettingsVisible, Mode=TwoWay}">
+                            <Expander Header="Peak matching"
+                                      IsExpanded="{Binding Path=UiState.ArePeakMathingSettingsVisible, Mode=TwoWay}">
                                 <Grid DataContext="{Binding Path=Settings, Mode=OneTime}">
                                     <Grid.RowDefinitions>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
+                                        <RowDefinition/>
                                         <RowDefinition/>
                                         <RowDefinition/>
                                     </Grid.RowDefinitions>
@@ -587,22 +655,88 @@
                                     <Label Grid.Row="0" Grid.Column="0"
                                            Content="Max hand-gaze interval (ms)"/>
                                     <TextBox Grid.Row="0" Grid.Column="1"
-                                             Text="{Binding MaxHandGazeDelay, Mode=TwoWay}"/>
+                                             Text="{Binding MaxHandGazeDelay, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                     <Label Grid.Row="1" Grid.Column="0"
-                                           Content="Quantile threshold"/>
+                                           Content="Max Tr start - Gz start (ms)"/>
                                     <TextBox Grid.Row="1" Grid.Column="1"
-                                             Text="{Binding QuantileThreshold, Mode=TwoWay}"/>
+                                             Text="{Binding MaxTrialStartToGazePeakStartInterval, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <Label Grid.Row="2" Grid.Column="0"
+                                           Content="Max Gz end - Nxt tr start (ms)"/>
+                                    <TextBox Grid.Row="2" Grid.Column="1"
+                                             Text="{Binding MaxGazePeakEndToNextTrialStartInterval, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <Label Grid.Row="3" Grid.Column="0"
+                                           Content="Max Gz start - Hnd start (ms)"/>
+                                    <TextBox Grid.Row="3" Grid.Column="1"
+                                             Text="{Binding MaxGazePeakStartToHandPeakStartInterval, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <Label Grid.Row="4" Grid.Column="0"
+                                           Content="Min Resp - Gz start (ms)"/>
+                                    <TextBox Grid.Row="4" Grid.Column="1"
+                                             Text="{Binding MinResponseToGazePeakStartInterval, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                    <Label Grid.Row="5" Grid.Column="0"
+                                           Content="Max invalid hand data share"/>
+                                    <TextBox Grid.Row="5" Grid.Column="1"
+                                             Text="{Binding MaxInvalidHandDataShare, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                </Grid>
+                            </Expander>
+
+                            <Separator/>
+
+                            <Expander Header="Other"
+                                      IsExpanded="{Binding Path=UiState.AreOtherSettingsVisible, Mode=TwoWay}">
+                                <Grid DataContext="{Binding Path=Settings, Mode=OneTime}">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="{Binding Source={StaticResource settingsLabelWidth}, Converter={StaticResource num2gl}}"/>
+                                        <ColumnDefinition Width="{Binding Source={StaticResource settingsValueWidth}, Converter={StaticResource num2gl}}"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Label Grid.Row="0" Grid.Column="0"
+                                           Content="Quantile threshold"/>
+                                    <TextBox Grid.Row="0" Grid.Column="1"
+                                             Text="{Binding QuantileThreshold, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                 </Grid>
                             </Expander>
                         </StackPanel>
                     </ScrollViewer>
 
-                    <Button Grid.Row="1"
-                            Margin="0,0,10,0"
-                            DataContext="{Binding Vdls}"
-                            IsEnabled="{Binding SelectedItem, ElementName=lsbVdls, Converter={StaticResource obj2bool}}"
-                            Content="Analyze"
-                            Click="Analyze_Click"/>
+                    <Grid Grid.Row="1"
+                          DataContext="{Binding Vdls}"
+                          Margin="0,0,10,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0"
+                                IsEnabled="{Binding SelectedItem, ElementName=lsbVdls, Converter={StaticResource obj2bool}}"
+                                Content="Analyze"
+                                Click="Analyze_Click"/>
+                        <Button Grid.Column="1"
+                                Width="32"
+                                Content="⏷"
+                                IsEnabled="{Binding Items.Count, Converter={StaticResource count2bool}}"
+                                RenderTransformOrigin="0.5,0.5"
+                                Click="Menu_Click">
+                            <Button.RenderTransform>
+                                <TransformGroup>
+                                    <ScaleTransform/>
+                                    <SkewTransform/>
+                                    <RotateTransform/>
+                                    <TranslateTransform X="-1"/>
+                                </TransformGroup>
+                            </Button.RenderTransform>
+                            <Button.ContextMenu>
+                                <ContextMenu Placement="Left">
+                                    <MenuItem Style="{StaticResource CompactMenuItemStyle}"
+                                          Header="Analyze all..."
+                                          Width="90"
+                                          HorizontalContentAlignment="Left"
+                                          Click="AnalyzeParticipant_Click"/>
+                                </ContextMenu>
+                            </Button.ContextMenu>
+                        </Button>
+                    </Grid>
                 </Grid>
             </Grid>
         </Border>

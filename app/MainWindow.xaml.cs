@@ -1,5 +1,5 @@
 ﻿using Microsoft.Win32;
-using System.Security.Cryptography;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -136,14 +136,34 @@ public partial class MainWindow : Window
 
         if (folderDialog.ShowDialog() == true)
         {
+            Vdls.Clear();
             try
             {
-                (var vdlList, _statistics) = Utils.LoadParticipantData(folderDialog.FolderName);
+                var subfolders = Directory.GetDirectories(folderDialog.FolderName);
+                if (subfolders.Length == 2 && subfolders[0].EndsWith("self") && subfolders[1].EndsWith("system")) 
+                {
+                    (var vdlList, _statistics) = Utils.LoadParticipantData(folderDialog.FolderName);
 
-                Vdls.Add(vdlList);
+                    Vdls.Add(vdlList);
 
-                var summary = _statistics.Select(statistics => string.Join('\n', statistics.Get(Models.Format.List)));
-                txbSummary.Text = string.Join("\n\n", summary);
+                    var summary = _statistics.Select(statistics => string.Join('\n', statistics.Get(Models.Format.List)));
+                    txbSummary.Text = string.Join("\n\n", summary);
+                }
+                else
+                {
+                    var wait = new Views.Wait();
+                    wait.Show();
+                    Task.Run(() =>
+                    {
+                        Utils.CopyStatisticsToClipboard(folderDialog.FolderName);
+                        Dispatcher.Invoke(() =>
+                        {
+                            wait.Close();
+                            MessageBox.Show("Data was copied to the clipboard", Title, MessageBoxButton.OK);
+                            GC.Collect();
+                        });
+                    });
+                }
             }
             catch (Exception ex)
             {
@@ -160,6 +180,35 @@ public partial class MainWindow : Window
         Processor.Process();
         graph.DisplayProcessedData(Processor);
         txbSummary.Text = new Models.VdlStatistics(Processor).Get(Models.Format.List);
+    }
+
+    private void AnalyzeParticipant_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            Utils.CopyStatisticsToClipboard(Vdls.Items.ToArray());
+            MessageBox.Show("Data was copied to the clipboard", Title, MessageBoxButton.OK);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error: '{ex.Message}'.",
+                App.Current.MainWindow.Title, MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private void Menu_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn)
+        {
+            var menu = ContextMenuService.GetContextMenu(btn);
+            if (menu?.IsOpen == false)
+            {
+                menu.HorizontalOffset = btn.ActualWidth + 5;
+                menu.VerticalOffset = btn.ActualHeight;
+                menu.PlacementTarget = btn;
+                menu.IsOpen = true;
+            }
+        }
     }
 
     private void TimestampSource_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -191,7 +240,7 @@ public partial class MainWindow : Window
                 ? [new Models.VdlStatistics(Processor)]
                 : _statistics;
 
-            var wasCopied = Utils.CopySummaryToClipboard(statistics,
+            var wasCopied = Utils.CopyStatisticsToClipboard(statistics,
                 Keyboard.Modifiers == ModifierKeys.Shift);
 
             if (wasCopied)
@@ -204,5 +253,13 @@ public partial class MainWindow : Window
                 });
             }
         }
+    }
+
+    private void AnalyzerSetting_KeyUp(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter && lsbVdls.SelectedItem != null)
+        {
+            Analyze_Click(sender, e);
+        }    
     }
 }

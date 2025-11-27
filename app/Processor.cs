@@ -91,17 +91,23 @@ public class Processor
         if (Vdl == null)
             return;
 
-        HandPeaks = HandPeakDetector.Find(HandSamples);
-        GazePeaks = GazePeakDetector.Find(GazeSamples);
+        NBackTaskEvents = GetNBackTaskEvents(_records);
 
-        Trials = Trial.GetTrials(_records, HandPeaks, GazePeaks);
+        var responseEvents = NBackTaskEvents
+            .Where(e => e.Event.Type == NBackTaskEventType.TrialResponse)
+            .ToArray();
+
+        long startTimestamp = NBackTaskEvents.First().Timestamp;
+
+        HandPeaks = HandPeakDetector.Find(HandSamples, startTimestamp, responseEvents);
+        GazePeaks = GazePeakDetector.Find(GazeSamples, startTimestamp);
+
+        Trials = Trial.GetTrials(_records, HandPeaks, GazePeaks, Vdl?.Condition.ToString());
 
         GazeDataMisses = BlinkDetector.Find(GazeSamples);
         Blinks = BlinkDetector2.Find(_records);
 
         PupilSizes = GetPupilSizes(_records);
-
-        NBackTaskEvents = GetNBackTaskEvents(_records);
     }
 
     public static long GetTimestamp(VdlRecord record) => _settings.TimestampSource switch
@@ -127,13 +133,13 @@ public class Processor
     private static Sample[] GetHandSamples(VdlRecord[] records) => _settings.HandDataSource switch
     {
         HandDataSource.IndexFinger => records
-            .Select(record => new Sample(GetTimestamp(record), record.HandIndex.Y))
+            .Select(record => new Sample(GetTimestamp(record), -record.HandIndex.Z))
             .ToArray(),
         HandDataSource.MiddleFinger => records
-            .Select(record => new Sample(GetTimestamp(record), record.HandMiddle.Y))
+            .Select(record => new Sample(GetTimestamp(record), -record.HandMiddle.Z))
             .ToArray(),
         HandDataSource.Palm => records
-            .Select(record => new Sample(GetTimestamp(record), record.HandPalm.Y))
+            .Select(record => new Sample(GetTimestamp(record), -record.HandPalm.Z))
             .ToArray(),
         HandDataSource.TopViewIndexFinger => records
             .Select(record => new Sample(GetTimestamp(record), -record.TopViewHandIndex.Z))
@@ -163,8 +169,22 @@ public class Processor
         .Select(record => (record.LeftPupil.Size + record.RightPupil.Size) / 2)
         .ToArray();
 
-    private static TimestampedNbtEvent[] GetNBackTaskEvents(VdlRecord[] records) => records
-        .Where(r => r.NBackTaskEvent != null)
-        .Select(record => new TimestampedNbtEvent(GetTimestamp(record), record.NBackTaskEvent!))
-        .ToArray();
+    private static TimestampedNbtEvent[] GetNBackTaskEvents(VdlRecord[] records)
+    {
+        NBackTaskEventType? lastEvent = null;
+        return records
+            .Where(r =>
+            {
+                if (r.NBackTaskEvent != null)
+                {
+                    if (r.NBackTaskEvent.Type == lastEvent)     // NBT logging bugfix: filters out duplicated events, primarily the response events
+                        return false;
+                    lastEvent = r.NBackTaskEvent.Type;
+                    return true;
+                }
+                return false;
+            })
+            .Select(record => new TimestampedNbtEvent(GetTimestamp(record), record.NBackTaskEvent!))
+            .ToArray();
+    }
 }

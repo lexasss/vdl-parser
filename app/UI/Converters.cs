@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Data;
+using VdlParser.Detectors;
 
 namespace VdlParser;
 
@@ -24,6 +25,25 @@ public class StringToBoolConverter : IValueConverter
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
         "";
+}
+
+[ValueConversion(typeof(HandPeakDetectionMethod), typeof(bool))]
+public class HandPeakDetectionMethodToBoolConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        (HandPeakDetectionMethod)value == (HandPeakDetectionMethod)parameter;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => false;
+}
+
+[ValueConversion(typeof(object), typeof(bool))]
+public class CountToBoolConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        (int)value > 0;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        (bool)value ? 1 : 0;
 }
 
 [ValueConversion(typeof(bool), typeof(Visibility))]

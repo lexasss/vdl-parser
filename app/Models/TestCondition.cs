@@ -65,6 +65,11 @@ public class TestCondition
         }
     }
 
+    public override string ToString()
+    {
+        return $"Participant: {Participant}, Pace: {Pace}, Layout: {Layout}, Digits: {Digits}, Lambda: {Lambda}";
+    }
+
     // Internal
 
     record class Condition(double Lambda, int Digits, int Layout);

@@ -6,33 +6,128 @@ namespace VdlParser.Detectors;
 public record class Sample(long Timestamp, double Value);
 public record class Peak(int StartIndex, long TimestampStart, long TimestampEnd, double Amplitude);
 
-public enum DataSourceType
-{
-    Hand,
-    Gaze
-}
-
 public enum PeakDirection
 {
     Up,
     Down
 }
 
+[TypeConverter(typeof(FriendlyEnumConverter))]
+public enum HandPeakDetectionMethod
+{
+    RealTime,
+    ResponseBased
+}
+
 public class HandPeakDetector : PeakDetector, ISettings
 {
     public string Section => nameof(HandPeakDetector);
-    public HandPeakDetector() : base() { IgnoranceThrehold = -20; }
-    public override Peak[] Find(Sample[] samples)
+    public double MinPeakHeight { get; set; } = 5;
+    public HandPeakDetectionMethod HandPeakDetectionMethod { get; set; } = HandPeakDetectionMethod.ResponseBased;
+
+    public HandPeakDetector() : base()
     {
-        IgnoranceThrehold = -20;
-        return base.Find(samples);
+        MinPeakDuration = 500;
+    }
+
+    public Peak[] Find(Sample[] samples, long startTimestamp, TimestampedNbtEvent[] responses) => HandPeakDetectionMethod switch
+    {
+        HandPeakDetectionMethod.RealTime => base.Find(samples, startTimestamp),
+        HandPeakDetectionMethod.ResponseBased => FindForResponses(samples, responses),
+        _ => throw new NotImplementedException($"{HandPeakDetectionMethod} is not supported")
+    };
+
+    // Internal
+
+    private Peak[] FindForResponses(Sample[] samples, TimestampedNbtEvent[] responses)
+    {
+        var peaks = new List<Peak>();
+        if (samples.Length == 0)
+            return peaks.ToArray();
+
+        var responseTimestamps = responses.Select(r => r.Timestamp).ToHashSet();
+        //samples = samples.Where(s => s.Value != 0).ToArray();
+
+        int ri = 0;
+        foreach (var responseTimestamp in responseTimestamps)
+        {
+            Sample responseSample = samples[ri];
+            if (responseSample.Timestamp > responseTimestamp)
+                continue;
+
+            // Initially, find the sample at or just after the response timestamp
+            while (responseSample.Timestamp < responseTimestamp && ri < samples.Length - 1)
+            {
+                responseSample = samples[++ri];
+            }
+
+            if (ri == samples.Length || Math.Abs(responseSample.Timestamp - responseTimestamp) > 250)   // ms, tolerance
+                continue;
+
+            int si = ri - 1;
+            var sample = samples[si];
+
+            // then, find the sample that drop below the threshold before the peak
+            while (si > 0 && responseSample.Value - sample.Value < MinPeakHeight)
+            {
+                sample = samples[--si];
+            }
+
+            // finally, find the peak start
+            si += _bufferSize / 2;
+            var std = double.MaxValue;
+
+            while (std > PeakThreshold && --si > _bufferSize)
+            {
+                var chunk = samples[(si - _bufferSize)..si];
+                var validValue = chunk.LastOrDefault(sample => sample.Value != 0)?.Value ?? 0;
+                std = chunk.Reverse().Select(s =>
+                {
+                    if (s.Value != 0)
+                        validValue = s.Value;
+                    return validValue;
+                }).StandardDeviation();
+            }
+
+            if (si <= _bufferSize)
+                continue;
+
+            si -= _bufferSize / 3;
+
+            int ei = ri + _bufferSize - 1;
+            std = double.MaxValue;
+
+            // then, find the sample that drop below the threshold after the peak
+            while (std > PeakThreshold && ++ei < samples.Length)
+            {
+                var chunk = samples[(ei - _bufferSize)..ei];
+                var validValue = chunk.FirstOrDefault(sample => sample.Value != 0)?.Value ?? 0;
+                std = chunk.Select(s =>
+                {
+                    if (s.Value != 0)
+                        validValue = s.Value;
+                    return validValue;
+                }).StandardDeviation();
+            }
+
+            ei -= _bufferSize / 3 * 2;
+
+            var startTimestamp = samples[si].Timestamp;
+            var endTimestamp = samples[ei].Timestamp;
+
+            if (endTimestamp - startTimestamp > MaxPeakDuration)
+                continue;
+
+            peaks.Add(new Peak(si, startTimestamp, endTimestamp, samples[ri].Value - samples[si].Value));
+        }
+
+        return peaks.ToArray();
     }
 }
 
 public class GazePeakDetector : PeakDetector, ISettings
 {
     public string Section => nameof(GazePeakDetector);
-    public GazePeakDetector() : base() { IgnoranceThrehold = -1000; }
 }
 
 public class PeakDetector : INotifyPropertyChanged
@@ -44,22 +139,16 @@ public class PeakDetector : INotifyPropertyChanged
     }
 
     public double PeakThreshold { get; set; } = 1.5;
-    public double IgnoranceThrehold { get; set; } = 20;
+    public long MinPeakDuration { get; set; } = 150;   // ms
     public long MaxPeakDuration { get; set; } = 1500;   // ms
     public long MinInterPeakInterval { get; set; } = 1000;   // ms
     public PeakDirection Direction { get; set; } = PeakDirection.Up;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public virtual Peak[] Find(Sample[] samples)
+    public virtual Peak[] Find(Sample[] samples, long startTimestamp)
     {
         var peaks = new List<Peak>();
-        var ignoranceThreshold = Direction switch
-        {
-            PeakDirection.Up => IgnoranceThrehold,
-            PeakDirection.Down => -IgnoranceThrehold,
-            _ => throw new NotImplementedException($"{Direction} direction is not supported")
-        };
 
         int i = 0;
 
@@ -68,16 +157,16 @@ public class PeakDetector : INotifyPropertyChanged
         long timestampLastPeakEnd = 0;
         int timestampStartIndex = 0;
 
-        // Advances "i" until the last "BufferSize" samples stay outside of the ignorance zone,
-        // which is limited by "IgnoranceThrehold" (depend on "Direction" whether it limits
-        // from the top or from the bottom)
-        // Returns "false" if no datapoints left to analyze
+        bool IsInvalidValue(double value) => value == 0;
+
+        // Advances "i" until the last "BufferSize" samples all become valid.
+        // Returns "false" if no valid datapoints left.
         bool SeekBufferHead()
         {
             var firstValidDatapointIndex = i;
 
             while (firstValidDatapointIndex < samples.Length &&
-                IsBelowThreshold(samples[firstValidDatapointIndex].Value, ignoranceThreshold))
+                IsInvalidValue(samples[firstValidDatapointIndex].Value))
             {
                 firstValidDatapointIndex += 1;
             }
@@ -85,7 +174,7 @@ public class PeakDetector : INotifyPropertyChanged
             i = firstValidDatapointIndex;
             for (int j = i + 1; i + j < samples.Length && j < BufferSize; j++)
             {
-                if (IsBelowThreshold(samples[++i].Value, ignoranceThreshold))
+                if (IsInvalidValue(samples[++i].Value))
                 {
                     return SeekBufferHead();
                 }
@@ -97,9 +186,14 @@ public class PeakDetector : INotifyPropertyChanged
         if (!SeekBufferHead())
             return peaks.ToArray();
 
+        while (i < samples.Length && samples[i].Timestamp < startTimestamp)
+        {
+            i++;
+        }
+
         while (++i < samples.Length)
         {
-            if (IsBelowThreshold(samples[i].Value, ignoranceThreshold) && !SeekBufferHead())
+            if (IsInvalidValue(samples[i].Value) && !SeekBufferHead())
                 break;
 
             var chunk = samples[(i - BufferSize)..i];
@@ -119,28 +213,33 @@ public class PeakDetector : INotifyPropertyChanged
                 timestampStart = timestampCurrent;
                 timestampStartIndex = i - _bufferSize / 2;
             }
-            else if (isInPeak && IsBelowThreshold(difference, -PeakThreshold))
+            else if (isInPeak)
             {
-                isInPeak = false;
+                var timestampEnd = timestampCurrent;
+                var duration = timestampEnd - timestampStart;
 
-                if (timestampStart != 0)
+                if (duration > MaxPeakDuration)
                 {
-                    var timestampEnd = timestampCurrent;
-                    timestampLastPeakEnd = timestampEnd;
-
-                    if (timestampEnd - timestampStart < MaxPeakDuration)
-                    {
-                        var peakValue = samples[timestampStartIndex..i].Select(s => s.Value).Median();
-                        peaks.Add(new Peak(timestampStartIndex, timestampStart, timestampEnd, peakValue));
-                    }
-                    else
-                    {
-                        System.Diagnostics.Debug.WriteLine($"[{timestampStartIndex}] Peak detector > too long interval - " +
-                            $"{timestampStart}-{timestampEnd} ({timestampEnd - timestampStart})");
-                    }
+                    isInPeak = false;
+                    timestampStart = 0;
                 }
+                else if (IsBelowThreshold(difference, -PeakThreshold))
+                {
+                    isInPeak = false;
 
-                timestampStart = 0;
+                    if (timestampStart != 0)
+                    {
+                        timestampLastPeakEnd = timestampEnd;
+
+                        if (duration < MaxPeakDuration && duration > MinPeakDuration)
+                        {
+                            var peakValue = samples[timestampStartIndex..i].Select(s => s.Value).Median();
+                            peaks.Add(new Peak(timestampStartIndex, timestampStart, timestampEnd, peakValue));
+                        }
+                    }
+
+                    timestampStart = 0;
+                }
             }
         }
 
@@ -158,9 +257,9 @@ public class PeakDetector : INotifyPropertyChanged
 
     // Internal
 
-    int _bufferSize = 12;
+    protected int _bufferSize = 12;
 
-    private (double, double) GetAverages(Sample[] samples)
+    protected (double, double) GetAverages(Sample[] samples)
     {
         int count1 = 0;
         int count2 = 0;

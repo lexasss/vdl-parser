@@ -14,6 +14,8 @@ public class PupilCalibration(double size)
         var pupilSize = File.ReadAllLines(filename)
             .Skip(100)      // just skip the very first second or two
             .Select(line => VdlRecord.Parse(line)!)
+            .Where(record => record is VdlRecord)
+            .Cast<VdlRecord>()
             .Where(record => record.LeftPupil.Openness > 0.7 && record.RightPupil.Openness > 0.7)
             .Select(record => (record.LeftPupil.Size + record.RightPupil.Size) / 2)
             .Mean();

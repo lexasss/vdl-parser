@@ -10,32 +10,31 @@ public class TemproralBids
 {
     public int BidCount { get; set; } = 5;
 
-    public Bid[] Get(Timestamped[] points)
+    public Bid[] Get(Timestamped[] points, long startTimestamp, long endTimestamp)
     {
-        if (points.Length < BidCount)
-            return [];
-
-        var bidSize = (double)(points[^1].Timestamp - points[0].Timestamp) / BidCount;
+        var bidSize = (double)(endTimestamp - startTimestamp) / BidCount;
         var bids = new List<double>[BidCount];
+        foreach (var i in Enumerable.Range(0, BidCount))
+        {
+            bids[i] = [];
+        }
 
         int bidID = 0;
-        bids[0] = [];
-        double bidEdge = points[0].Timestamp + bidSize;
+        double bidEdge = startTimestamp + bidSize;
 
         for (int i = 0; i < points.Length; i++)
         {
             var point = points[i];
-            while ((point.Timestamp - bidEdge) > EPSILON)
+            while ((point.Timestamp - bidEdge) > EPSILON && bidID < BidCount - 1)
             {
                 bidID += 1;
-                bids[bidID] = new List<double>();
                 bidEdge += bidSize;
             }
             bids[bidID].Add(point.Value);
         }
 
         return bids
-            .Select(bid => new Bid(bid?.Mean() ?? 0, bid?.Count ?? 0))
+            .Select(bid => new Bid(bid?.Median() ?? 0, bid?.Count ?? 0))
             .ToArray();
     }
 
