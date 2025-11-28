@@ -259,7 +259,17 @@ public partial class MainWindow : Window
     {
         if (e.Key == Key.Enter && lsbVdls.SelectedItem != null)
         {
+            (sender as TextBox)?.GetBindingExpression(TextBox.TextProperty).UpdateSource();
             Analyze_Click(sender, e);
         }    
+    }
+
+    private void AnalyzerSetting_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (lsbVdls.SelectedItem != null)
+        {
+            (sender as ComboBox)?.GetBindingExpression(ComboBox.SelectedItemProperty).UpdateSource();
+            Analyze_Click(sender, e);
+        }
     }
 }

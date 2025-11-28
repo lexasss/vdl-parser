@@ -38,12 +38,7 @@ public class Trial(Peak? handPeak, Peak? gazePeak, long startTimestamp, long res
                 {
                     if (timestampResponse > 0 && timestampEnd == 0)     // NBT logging bugfix. On second and the rest trial start events: check against missing trial end event (RES)
                     {
-                        /*if (result.Count > 0)
-                        {
-                            var trial = result[^1];
-                            result[^1] = GetTrialWithPeaks(records, handPeaks, gazePeaks, trial.StartTimestamp, trial.ResponseTimestamp, record.TimestampSystem, trial.IsCorrect, settings);
-                        }
-                        else*/ if (record.TimestampSystem - latestStartTimestamp > MIN_TRIAL_LENGTH)
+                        if (record.TimestampSystem - latestStartTimestamp > MIN_TRIAL_LENGTH)
                         {
                             var trial = GetTrialWithPeaks(records, handPeaks, gazePeaks, latestStartTimestamp, timestampResponse, record.TimestampSystem, true, settings);
                             result.Add(trial);
@@ -101,29 +96,27 @@ public class Trial(Peak? handPeak, Peak? gazePeak, long startTimestamp, long res
 
     private static Trial GetTrialWithPeaks(VdlRecord[] records,
         Peak[] handPeaks, Peak[] gazePeaks,
-        long timestampStart, long timestampResponse, long timestampEnd,
+        long trialStartTimestamp, long trialResponseTimestamp, long trialEndTimestamp,
         bool isCorrect, GeneralSettings settings)
     {
-        var handMovementStd = GetStandardDeviation(records, settings.HandDataSource);
         var gazeMovementStd = GetStandardDeviation(records, settings.GazeDataSource);
 
         var trialRecords = records
-            .SkipWhile(r => r.TimestampSystem < timestampStart)
-            .TakeWhile(r => r.TimestampSystem < timestampEnd);
+            .SkipWhile(r => r.TimestampSystem < trialStartTimestamp)
+            .TakeWhile(r => r.TimestampSystem < trialEndTimestamp);
 
-        //bool isHandMoving = GetStandardDeviation(trialRecords, settings.HandDataSource) > handMovementStd / 4;
-        bool isGazeMoving = GetStandardDeviation(trialRecords, settings.GazeDataSource) > gazeMovementStd / 2;
+        bool isGazeMoving = GetStandardDeviation(trialRecords, settings.GazeDataSource) > (gazeMovementStd * settings.GazeMovementFactor);
         double handInvalidDataShare = GetInvaldidDataShare(trialRecords, settings.HandDataSource);
 
         var handPeak = handPeaks.LastOrDefault(peak =>
-            peak.TimestampStart > timestampStart &&
-            peak.TimestampStart < timestampResponse);
+            peak.TimestampStart > trialStartTimestamp &&
+            peak.TimestampStart < trialResponseTimestamp);
         var gazePeak = gazePeaks.LastOrDefault(peak =>
-            peak.TimestampStart > (timestampStart - settings.MaxTrialStartToGazePeakStartInterval) &&
-            peak.TimestampStart < timestampEnd &&
-            peak.TimestampEnd < timestampEnd + settings.MaxGazePeakEndToNextTrialStartInterval &&
+            peak.TimestampStart > (trialStartTimestamp - settings.MaxTrialStartToGazePeakStartInterval) &&
+            peak.TimestampStart < trialEndTimestamp &&
+            peak.TimestampEnd < trialEndTimestamp + settings.MaxGazePeakEndToNextTrialStartInterval &&
             (handPeak == null || peak.TimestampStart < (handPeak.TimestampStart + settings.MaxGazePeakStartToHandPeakStartInterval)) && 
-            peak.TimestampStart < (timestampResponse - settings.MinResponseToGazePeakStartInterval)
+            peak.TimestampStart < (trialResponseTimestamp - settings.MinResponseToGazePeakStartInterval)
             );
 
         bool isValid = handPeak != null && handInvalidDataShare < settings.MaxInvalidHandDataShare; // && isHandMoving;
@@ -138,7 +131,7 @@ public class Trial(Peak? handPeak, Peak? gazePeak, long startTimestamp, long res
             isValid = false;
         }
 
-        return new Trial(handPeak, gazePeak, timestampStart, timestampResponse, isCorrect, isValid);
+        return new Trial(handPeak, gazePeak, trialStartTimestamp, trialResponseTimestamp, isCorrect, isValid);
     }
 
 

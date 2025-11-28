@@ -22,6 +22,7 @@ public class GeneralSettings : ISettings
     public int MaxGazePeakStartToHandPeakStartInterval { get; set; } = 750; // ms, the glance can start no later than 750 after the hand peak started
     public int MinResponseToGazePeakStartInterval { get; set; } = 250; // ms, the glance cannot start very close or after to the time the response was given
     public double MaxInvalidHandDataShare { get; set; } = 0.8;      // share of invalid data in hand data during a trial above which the trial is considered invalid
+    public double GazeMovementFactor { get; set; } = 0.5;      // % from the gaze data STD: trials with lower than this value time STD are considered as no-gaze-movement trials
     public double QuantileThreshold { get; set; } = 0.1;
 
     /// <summary>
