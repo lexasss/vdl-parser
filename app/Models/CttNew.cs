@@ -5,14 +5,12 @@ namespace VdlParser.Models;
 
 public record class CttNewRecord(long Timestamp, double Lambda, double LineOffset, double Input);
 
-public class CttNew(string filename, int participantId, bool isVr, CttNewRecord[] records) : IStatistics
+public class CttNew(string filename, (string,object)[] conditions, CttNewRecord[] records) : IStatistics
 {
     public string Filename => filename;
-    public double Lambda => _records[0].Lambda;
-    public int ParticipantID => participantId;
-    public string Condition => isVr ? "nctt+vr" : "nctt";
+    public (string, object)[] Conditions => conditions;
 
-    public static CttNew? Load(string filename)
+    public static CttNew? Load(string filename, TestCondition? condition = null)
     {
         var id = int.Parse(string.Join("", filename.Split(Path.DirectorySeparatorChar)[^3].Skip(1)) ?? "0");
         var isVr = IsVR(filename);
@@ -21,7 +19,7 @@ public class CttNew(string filename, int participantId, bool isVr, CttNewRecord[
         {
             long startTimestamp = 0;
 
-            return new CttNew(Path.GetFileName(filename), id, isVr, File
+            var records = File
                 .ReadAllLines(filename)
                 .Skip(1)
                 .Select(line =>
@@ -40,8 +38,15 @@ public class CttNew(string filename, int participantId, bool isVr, CttNewRecord[
                     return new CttNewRecord(timestamp / 10000, double.Parse(p[1]), double.Parse(p[2]), double.Parse(p[3]));
                 })
                 .SkipWhile(record => record.Timestamp < TRAINING_DURATION)
-                .ToArray()
-            );
+                .ToArray();
+
+            var conditions = condition?.AsArray() ?? [
+                ("Participant", id),
+                ("Condition", "nctt+" + (isVr ? "vr" : "pc")),
+                ("Lambda", records[0].Lambda)
+            ];
+
+            return new CttNew(Path.GetFileName(filename), conditions, records);
         }
         catch (Exception ex)
         {
@@ -60,16 +65,16 @@ public class CttNew(string filename, int participantId, bool isVr, CttNewRecord[
             .Select(record => Math.Abs(record.Input))
             .MeanStandardDeviation();
 
-        (string, object)[] rows = [
-            ("Filename", Filename),
-            ("Participant ID", ParticipantID),
-            ("Condition", Condition),
-            ("Lambda", Lambda),
-            ("Offset, mean", 100 * offsetMean),
-            ("Offset, SD", 100 * offsetSdt),
-            ("Input, mean", 100 * inputMean),
-            ("Input, SD", 100 * inputSdt),
-        ];
+        List<(string, object)> rows = [];
+        rows.Add(("Filename", Filename));
+        foreach (var condition in Conditions)
+        {
+            rows.Add(condition);
+        }
+        rows.Add(("Offset, mean", 100 * offsetMean));
+        rows.Add(("Offset, SD", 100 * offsetSdt));
+        rows.Add(("Input, mean", 100 * inputMean));
+        rows.Add(("Input, SD", 100 * inputSdt));
 
         if(format == Format.List)
         {

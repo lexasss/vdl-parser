@@ -130,7 +130,7 @@ public static class Utils
                         App.Current.MainWindow.Title, MessageBoxButton.OK, MessageBoxImage.Error);
                 }
 
-                if (CttNew.Load(cttFilename) is IStatistics cttStatistics)
+                if (CttNew.Load(cttFilename, testCondition) is IStatistics cttStatistics)
                 {
                     statisticsList.Add(cttStatistics);
                 }
@@ -140,7 +140,7 @@ public static class Utils
                         App.Current.MainWindow.Title, MessageBoxButton.OK, MessageBoxImage.Error);
                 }
 
-                if (Nbt.Load(nbtFilename) is IStatistics nbtStatistics)
+                if (Nbt.Load(nbtFilename, cttFilename, testCondition) is IStatistics nbtStatistics)
                 {
                     statisticsList.Add(nbtStatistics);
                 }

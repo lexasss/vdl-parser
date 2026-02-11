@@ -133,7 +133,7 @@ public partial class Graph : UserControl, INotifyPropertyChanged
 
         foreach (var peak in processor.GazePeaks)
         {
-            bool isMatched = processor.Trials.Any(trial => peak == trial.GazePeak && trial.HasHandGazeMatch);
+            bool isMatched = processor.Trials.Any(trial => peak == trial.LastGazePeak && trial.HasHandGazeMatch);
             chart.Plot.AddVerticalLine(peak.TimestampStart, COLOR_GAZE, isMatched ? 1 : 2,
                 LineStyle.Dot, label: EnsureSingle("Gaze peak start"));
         }

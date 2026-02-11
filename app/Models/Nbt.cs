@@ -8,14 +8,12 @@ public record class NtbRecord(int Target, int? Response, bool IsCorrect, int? De
 /// <summary>
 /// N-Back task log data
 /// </summary>
-public class Nbt(string filename, int participantId, bool isNewCtt, bool isVr, double lambda, NtbRecord[] records) : IStatistics
+public class Nbt(string filename, (string, object)[] conditions, NtbRecord[] records) : IStatistics
 {
     public string Filename => filename;
-    public double Lambda => lambda;
-    public int ParticipantID => participantId;
-    public string Condition => isNewCtt ? (isVr ? "nctt+vr" : "nctt") : "octt";
+    public (string, object)[] Conditions => conditions;
 
-    public static Nbt? Load(string filename, string? cttFilename = null)
+    public static Nbt? Load(string filename, string? cttFilename = null, TestCondition? condition = null)
     {
         var isHeadGazeStudy = cttFilename != null;
 
@@ -26,7 +24,14 @@ public class Nbt(string filename, int participantId, bool isNewCtt, bool isVr, d
 
         try
         {
-            return new Nbt(Path.GetFileName(filename), id, newCttFilename != null, isVr, lambda, File
+            var conditions = condition?.AsArray() ?? [
+                ("Participant", id),
+                ("Condition", newCttFilename != null ? (isVr ? "nctt+vr" : "nctt") : "octt"),
+                ("Lambda", lambda)
+];
+
+            var conditionName = newCttFilename != null ? (isVr ? "nctt+vr" : "nctt") : "octt";
+            return new Nbt(Path.GetFileName(filename), conditions, File
                 .ReadAllLines(filename)
                 .SkipWhile(line => !line.StartsWith('#'))
                 .Skip(2)
@@ -59,15 +64,15 @@ public class Nbt(string filename, int participantId, bool isNewCtt, bool isVr, d
             .Select(record => (double)(record.Delay ?? 0))
             .MeanStandardDeviation();
 
-        (string, object)[] rows = [
-            ("Filename", Filename),
-            ("Participant ID", ParticipantID),
-            ("Condition", Condition),
-            ("Lambda", Lambda),
-            ("Correctness", correctness),
-            ("Response delay, mean", responseDelayMean),
-            ("Response delay, SD", responseDelayStd),
-        ];
+        List<(string, object)> rows = [];
+        rows.Add(("Filename", Filename));
+        foreach (var condition in Conditions)
+        {
+            rows.Add(condition);
+        }
+        rows.Add(("Correctness", correctness));
+        rows.Add(("Response delay, mean", responseDelayMean));
+        rows.Add(("Response delay, SD", responseDelayStd));
 
         if (format == Format.List)
         {

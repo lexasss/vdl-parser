@@ -376,10 +376,18 @@
                         Margin="16,8">
                 <Button 
                     Style="{StaticResource CopyButton}"
-                    ToolTip="Click to copy data in the Excel-friendly format.\n(Keep shift to copy row headers instead of values)"
                     IsEnabled="{Binding Text, Converter={StaticResource str2bool}, ElementName=txbSummary}"
                     Click="CopyButton_Click">
                     <ContentControl Template="{StaticResource CopySign}"/>
+                    <Button.ToolTip>
+                        <TextBlock>
+                            <Run>Click to copy data in the Excel-friendly format.</Run>
+                            <LineBreak/>
+                            <Run>(Keep SHIFT to copy row headers instead of values)</Run>
+                            <LineBreak/>
+                            <Run>(Keep CTRL to copy additional participant data)</Run>
+                        </TextBlock>
+                    </Button.ToolTip>
                 </Button>
                 <Label x:Name="lblCopied" Grid.Row="3"
                    Content="Copied"

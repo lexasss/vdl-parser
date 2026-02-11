@@ -70,6 +70,18 @@ public class TestCondition
         return $"Participant: {Participant}, Pace: {Pace}, Layout: {Layout}, Digits: {Digits}, Lambda: {Lambda}";
     }
 
+    public (string, object)[] AsArray()
+    {
+        return
+        [
+            ( "Participant", Participant ),
+            ( "Pace", Pace ),
+            ( "Lambda", Lambda ),
+            ( "Layout", Layout ),
+            ( "Digits", Digits )
+        ];
+    }
+
     // Internal
 
     record class Condition(double Lambda, int Digits, int Layout);

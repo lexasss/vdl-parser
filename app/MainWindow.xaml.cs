@@ -238,10 +238,16 @@ public partial class MainWindow : Window
         {
             var statistics = Vdls.SelectedItem != null
                 ? [new Models.VdlStatistics(Processor)]
-                : _statistics;
+                : (Keyboard.Modifiers == ModifierKeys.Control
+                    ? _statistics
+                        .Where(s => s is Models.Nbt)
+                        .ToArray()
+                    : _statistics
+                        .Where(s => s is Models.CttNew or Models.CttOld)
+                        .ToArray());
 
             var wasCopied = Utils.CopyStatisticsToClipboard(statistics,
-                Keyboard.Modifiers == ModifierKeys.Shift);
+                    Keyboard.Modifiers == ModifierKeys.Shift);
 
             if (wasCopied)
             {

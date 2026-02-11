@@ -48,6 +48,28 @@ public class VdlStatistics(Processor processor) : IStatistics
             .Where(gdm => gdm.IsBlink)
             .Count();
 
+        var handMovementOnsetDelays = gazeHandMatches
+            .Select(trial => trial.HandPeak == null ? 0d : trial.HandPeak.TimestampStart - trial.StartTimestamp)
+            .Where(delay => delay > 0);
+        var (handMovementOnsetDelayMean, handMovementOnsetDelayStd) = handMovementOnsetDelays.MeanStandardDeviation();
+        var handSelectionDurations = trialsWithValidData
+            .Select(trial => trial.HandPeak == null ? 0d : trial.ResponseTimestamp - trial.HandPeak.TimestampStart)
+            .Where(delay => delay > 0);
+        var (handSelectionDurationMean, handSelectionDurationStd) = handSelectionDurations.MeanStandardDeviation();
+        var firstGazeMovementOnsetDelays = trialsWithValidData
+            .Select(trial => trial.FirstGazePeak == null ? -1d : Math.Max(0, trial.FirstGazePeak.TimestampStart - trial.StartTimestamp))
+            .Where(delay => delay >= 0);
+        var (firstGazeMovementOnsetDelayMean, firstGazeMovementOnsetDelayStd) = firstGazeMovementOnsetDelays.MeanStandardDeviation();
+        var selectionFixationDurations = trialsWithValidData
+            .Select(trial => (double)(trial.LastGazePeak?.Duration ?? 0))
+            .Where(duration => duration > 0);
+        var (selectionFixationDurationMean, selectionFixationDurationStd) = selectionFixationDurations.MeanStandardDeviation();
+        var totalGazeDurations = trialsWithValidData
+            .Select(trial => (double)trial.TotalGazeDuration)
+            .Where(duration => duration > 0);
+        var (totalGazeDurationMean, totalGazeDurationStd) = totalGazeDurations.MeanStandardDeviation();
+        var gazeFollowsHandCount = gazeHandMatches.Count(trial => trial.GazeHandInterval < 0);
+
         var ql = GeneralSettings.Instance.QuantileThreshold;
         var qh = 1.0 - ql;
 
@@ -76,6 +98,16 @@ public class VdlStatistics(Processor processor) : IStatistics
                 $"Gaze-lost events: {processor.GazeDataMisses.Length}",
                 $"  blinks: {blinkCount} or {blinkCount2}",
                 $"  eyes closed or lost: {longEyeLostCount}",
+                $"Hand movement onset delay",
+                $"  mean = {handMovementOnsetDelayMean:F0} ms (SD = {handMovementOnsetDelayStd:F1} ms)",
+                $"Hand selection duration",
+                $"  mean = {handSelectionDurationMean:F0} ms (SD = {handSelectionDurationStd:F1} ms)",
+                $"First gaze movement onset delay",
+                $"  mean = {firstGazeMovementOnsetDelayMean:F0} ms (SD = {firstGazeMovementOnsetDelayStd:F1} ms)",
+                $"Selection fixation duration",
+                $"  mean = {selectionFixationDurationMean:F0} ms (SD = {selectionFixationDurationStd:F1} ms)",
+                $"Total trial gaze duration",
+                $"  mean = {totalGazeDurationMean:F0} ms (SD = {totalGazeDurationStd:F1} ms)",
             ]);
         else if (format == Format.Rows || format == Format.RowHeaders)
         {
@@ -109,11 +141,11 @@ public class VdlStatistics(Processor processor) : IStatistics
                 ($"{string.Join('\n', gazeHandIntervalBids.Select((_, i) => $"Gaze-hand advance, bid {i+1}"))}",
                  $"{string.Join('\n', gazeHandIntervalBids.Count() < 5 ? emptyBids : gazeHandIntervalBidsStr)}"),
 
-                ("Glance duration, mean", glanceDurationMean),
-                ("Glance duration, SD", glanceDurationStd),
-                ("Glance duration, median", glanceDurations.Median()),
-                ($"Glance duration, quantile {ql*100:F0}%", glanceDurations.Quantile(ql)),
-                ($"Glance duration, quantile {qh*100:F0}%", glanceDurations.Quantile(qh)),
+                ("Fixation duration, mean", glanceDurationMean),
+                ("Fixation duration, SD", glanceDurationStd),
+                ("Fixation duration, median", glanceDurations.Median()),
+                ($"Fixation duration, quantile {ql*100:F0}%", glanceDurations.Quantile(ql)),
+                ($"Fixation duration, quantile {qh*100:F0}%", glanceDurations.Quantile(qh)),
 
                 ("Pupil size, mean", pupilSizeMean),
                 ("Pupil size, SD", pupilSizeStd),
@@ -127,6 +159,19 @@ public class VdlStatistics(Processor processor) : IStatistics
                 ("Correct responses, %", 100*correctResponses),
                 ("Calibrated pupil size, mean", pupilSizeMean - (processor.Vdl?.PupilCalibration?.Size ?? 0)),
                 ("Blinks 2", blinkCount2),
+
+                ("Hand movement onset, mean", handMovementOnsetDelayMean),
+                ("Hand movement onset, SD", handMovementOnsetDelayStd),
+                ("Hand selection duration, mean", handSelectionDurationMean),
+                ("Hand selection duration, SD", handSelectionDurationStd),
+                ("First gaze movement onset, mean", firstGazeMovementOnsetDelayMean),
+                ("First gaze movement onset, SD", firstGazeMovementOnsetDelayStd),
+                ("Selection fixation duration, mean", selectionFixationDurationMean),
+                ("Selection fixation duration, SD", selectionFixationDurationStd),
+                ("Total trial gaze duration, mean", totalGazeDurationMean),
+                ("Total trial gaze duration, SD", totalGazeDurationStd),
+                ("Gaze-Hand match count", gazeHandMatchCount),
+                ("Gaze-preceides-Hand count", gazeFollowsHandCount),
             ];
             return string.Join('\n', format == Format.RowHeaders ?
                 rows.Select(row => row.Item1) :

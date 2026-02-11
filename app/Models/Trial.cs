@@ -4,15 +4,19 @@ using VdlParser.Detectors;
 
 namespace VdlParser.Models;
 
-public class Trial(Peak? handPeak, Peak? gazePeak, long startTimestamp, long responseTimestamp, bool isCorrect, bool hasValidData)
+public class Trial(Peak? handPeak, Peak? firstGazePeak, Peak? lastGazePeak,
+    long startTimestamp, long responseTimestamp, long totalGazeDuration,
+    bool isCorrect, bool hasValidData)
 {
     public Peak? HandPeak => handPeak;
-    public Peak? GazePeak => gazePeak;
+    public Peak? LastGazePeak => lastGazePeak;
+    public Peak? FirstGazePeak => firstGazePeak;
 
-    public bool HasHandGazeMatch => handPeak != null && gazePeak != null;
+    public bool HasHandGazeMatch => handPeak != null && lastGazePeak != null;
     public long StartTimestamp => startTimestamp;
     public long ResponseTimestamp => responseTimestamp;
-    public long GazeHandInterval => HasHandGazeMatch ? GazePeak!.TimestampStart - HandPeak!.TimestampStart : 0;
+    public long GazeHandInterval => HasHandGazeMatch ? LastGazePeak!.TimestampStart - HandPeak!.TimestampStart : 0;
+    public long TotalGazeDuration => totalGazeDuration;
     public bool IsCorrect => isCorrect;
     public bool HasValidData => hasValidData;
 
@@ -111,7 +115,7 @@ public class Trial(Peak? handPeak, Peak? gazePeak, long startTimestamp, long res
         var handPeak = handPeaks.LastOrDefault(peak =>
             peak.TimestampStart > trialStartTimestamp &&
             peak.TimestampStart < trialResponseTimestamp);
-        var gazePeak = gazePeaks.LastOrDefault(peak =>
+        var trialGazePeaks = gazePeaks.Where(peak =>
             peak.TimestampStart > (trialStartTimestamp - settings.MaxTrialStartToGazePeakStartInterval) &&
             peak.TimestampStart < trialEndTimestamp &&
             peak.TimestampEnd < trialEndTimestamp + settings.MaxGazePeakEndToNextTrialStartInterval &&
@@ -119,19 +123,23 @@ public class Trial(Peak? handPeak, Peak? gazePeak, long startTimestamp, long res
             peak.TimestampStart < (trialResponseTimestamp - settings.MinResponseToGazePeakStartInterval)
             );
 
+        var lastGazePeak = trialGazePeaks.LastOrDefault();
+        var firstGazePeak = trialGazePeaks.FirstOrDefault();
+        var totalGazeDuration = trialGazePeaks.Sum(peak => peak.Duration);
+
         bool isValid = handPeak != null && handInvalidDataShare < settings.MaxInvalidHandDataShare; // && isHandMoving;
 
-        if (gazePeak != null && handPeak != null &&
-            Math.Abs(gazePeak.TimestampStart - (handPeak?.TimestampStart ?? 0)) > settings.MaxHandGazeDelay)
+        if (lastGazePeak != null && handPeak != null &&
+            Math.Abs(lastGazePeak.TimestampStart - (handPeak?.TimestampStart ?? 0)) > settings.MaxHandGazeDelay)
         {
             isValid = false;
         }
-        else if (handPeak != null && gazePeak == null && isGazeMoving)
+        else if (handPeak != null && lastGazePeak == null && isGazeMoving)
         {
             isValid = false;
         }
 
-        return new Trial(handPeak, gazePeak, trialStartTimestamp, trialResponseTimestamp, isCorrect, isValid);
+        return new Trial(handPeak, firstGazePeak, lastGazePeak, trialStartTimestamp, trialResponseTimestamp, totalGazeDuration, isCorrect, isValid);
     }
 
 

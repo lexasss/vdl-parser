@@ -4,7 +4,10 @@ using System.ComponentModel;
 namespace VdlParser.Detectors;
 
 public record class Sample(long Timestamp, double Value);
-public record class Peak(int StartIndex, long TimestampStart, long TimestampEnd, double Amplitude);
+public record class Peak(int StartIndex, long TimestampStart, long TimestampEnd, double Amplitude)
+{
+   public long Duration => TimestampEnd - TimestampStart;
+};
 
 public enum PeakDirection
 {
