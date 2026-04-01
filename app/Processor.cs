@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using System.Diagnostics;
 using VdlParser.Detectors;
 using VdlParser.Models;
 
@@ -23,6 +24,10 @@ public enum GazeDataSource
 }
 
 public record class TimestampedNbtEvent(long Timestamp, NBackTaskEvent Event);
+public record class Interval(long Start, long End)
+{
+    public long Duration => End - Start;
+};
 
 public class Processor
 {
@@ -43,6 +48,7 @@ public class Processor
     public Blink[] Blinks { get; private set; } = [];
     public double[] PupilSizes { get; private set; } = [];
     public TimestampedNbtEvent[] NBackTaskEvents { get; private set; } = [];
+    public Interval[] HandGazeCommonPeakIntervals { get; private set; } = [];
 
     public Vdl? Vdl { get; private set; } = null;
 
@@ -108,6 +114,8 @@ public class Processor
         Blinks = BlinkDetector2.Find(_records);
 
         PupilSizes = GetPupilSizes(_records);
+
+        HandGazeCommonPeakIntervals = GetIntersections(HandPeaks, GazePeaks);
     }
 
     public static long GetTimestamp(VdlRecord record) => _settings.TimestampSource switch
@@ -186,5 +194,37 @@ public class Processor
             })
             .Select(record => new TimestampedNbtEvent(GetTimestamp(record), record.NBackTaskEvent!))
             .ToArray();
+    }
+
+    public static Interval[] GetIntersections(Peak[] peaks1, Peak[] peaks2)
+    {
+        var result = new List<Interval>();
+
+        int i = 0, j = 0;
+
+        while (i < peaks1.Length && j < peaks2.Length)
+        {
+            var a = peaks1[i];
+            var b = peaks2[j];
+
+            long start = Math.Max(a.TimestampStart, b.TimestampStart);
+            long end = Math.Min(a.TimestampEnd, b.TimestampEnd);
+
+            if (start < end)
+            {
+                result.Add(new Interval(start, end));
+            }
+
+            if (a.TimestampEnd < b.TimestampEnd)
+            {
+                i++;
+            }
+            else
+            {
+                j++;
+            }
+        }
+
+        return result.ToArray();
     }
 }

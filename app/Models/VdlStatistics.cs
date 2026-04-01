@@ -70,6 +70,11 @@ public class VdlStatistics(Processor processor) : IStatistics
         var (totalGazeDurationMean, totalGazeDurationStd) = totalGazeDurations.MeanStandardDeviation();
         var gazeFollowsHandCount = gazeHandMatches.Count(trial => trial.GazeHandInterval < 0);
 
+        var handGazeIntersections = processor.HandGazeCommonPeakIntervals.Select(intersection => (double)intersection.Duration);
+        var (handGazeIntersectionMean, handGazeIntersectionStd) = handGazeIntersections.MeanStandardDeviation();
+        var trialsWithHandPeak = processor.Trials.Where(trial => trial.HandPeak != null);
+        var handGazeIntersectionPerTrial = handGazeIntersections.Sum() / trialsWithHandPeak.Count();
+
         var ql = GeneralSettings.Instance.QuantileThreshold;
         var qh = 1.0 - ql;
 
@@ -108,6 +113,11 @@ public class VdlStatistics(Processor processor) : IStatistics
                 $"  mean = {selectionFixationDurationMean:F0} ms (SD = {selectionFixationDurationStd:F1} ms)",
                 $"Total trial gaze duration",
                 $"  mean = {totalGazeDurationMean:F0} ms (SD = {totalGazeDurationStd:F1} ms)",
+                $"Hand and gaze peak intersection time",
+                $"  mean = {handGazeIntersectionMean:F0} ms (SD = {handGazeIntersectionStd:F1} ms)",
+                $"  per trial = {handGazeIntersectionPerTrial:F0} ms",
+                $"  count = {handGazeIntersections.Count()}",
+                $"  valid trial count = {trialsWithHandPeak.Count()}",
             ]);
         else if (format == Format.Rows || format == Format.RowHeaders)
         {
@@ -128,9 +138,9 @@ public class VdlStatistics(Processor processor) : IStatistics
 
                 ("Response time, mean", responseIntervalMean),
                 ("Response time, SD", responseIntervalStd),
-                ("Response time, median", responseIntervals.Count() == 0 ? NODATA : responseIntervals.Median()),
-                ($"Response time, quantile {ql*100:F0}%", responseIntervals.Count() == 0 ? NODATA : responseIntervals.Quantile(ql)),
-                ($"Response time, quantile {qh*100:F0}%", responseIntervals.Count() == 0 ? NODATA : responseIntervals.Quantile(qh)),
+                ("Response time, median", responseIntervals.Any() ? responseIntervals.Median() : NODATA),
+                ($"Response time, quantile {ql*100:F0}%", responseIntervals.Any() ? responseIntervals.Quantile(ql) : NODATA),
+                ($"Response time, quantile {qh*100:F0}%", responseIntervals.Any() ? responseIntervals.Quantile(qh) : NODATA),
 
                 ("Gaze-hand advance, mean", double.IsNaN(gazeHandIntervalMean) ? NODATA : gazeHandIntervalMean),
                 ("Gaze-hand advance, SD", double.IsNaN(gazeHandIntervalStd) ? NODATA : gazeHandIntervalStd),
@@ -172,6 +182,11 @@ public class VdlStatistics(Processor processor) : IStatistics
                 ("Total trial gaze duration, SD", totalGazeDurationStd),
                 ("Gaze-Hand match count", gazeHandMatchCount),
                 ("Gaze-preceides-Hand count", gazeFollowsHandCount),
+
+                ("Gaze-Hand peak union time, mean", handGazeIntersectionMean),
+                ("Gaze-Hand peak union time, per trial", handGazeIntersectionPerTrial),
+                ("Gaze-Hand peak unions", handGazeIntersections.Count()),
+                ("Trial count", trialsWithHandPeak.Count()),
             ];
             return string.Join('\n', format == Format.RowHeaders ?
                 rows.Select(row => row.Item1) :

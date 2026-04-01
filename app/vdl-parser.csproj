@@ -8,6 +8,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>Assets\images\icon.ico</ApplicationIcon>
+    <Company>Tampere University</Company>
+    <Authors>Oleg Spakov</Authors>
+    <Copyright>Oleg Spakov @ 2025</Copyright>
   </PropertyGroup>
 	
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

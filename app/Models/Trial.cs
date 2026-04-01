@@ -115,11 +115,17 @@ public class Trial(Peak? handPeak, Peak? firstGazePeak, Peak? lastGazePeak,
         var handPeak = handPeaks.LastOrDefault(peak =>
             peak.TimestampStart > trialStartTimestamp &&
             peak.TimestampStart < trialResponseTimestamp);
-        var trialGazePeaks = gazePeaks.Where(peak =>
+        var trialGazePeaks = gazePeaks.Where(peak => /*
+            System.Diagnostics.Debug.WriteLine(peak.TimestampStart > (trialStartTimestamp - settings.MaxTrialStartToGazePeakStartInterval));
+            System.Diagnostics.Debug.WriteLine(peak.TimestampStart < trialEndTimestamp);
+            System.Diagnostics.Debug.WriteLine(peak.TimestampEnd < trialEndTimestamp + settings.MaxGazePeakEndToNextTrialStartInterval);
+            System.Diagnostics.Debug.WriteLine((handPeak == null || peak.TimestampStart < (handPeak.TimestampStart + settings.MaxGazePeakStartToHandPeakStartInterval)));
+            System.Diagnostics.Debug.WriteLine(peak.TimestampStart < (trialResponseTimestamp - settings.MinResponseToGazePeakStartInterval));
+            System.Diagnostics.Debug.WriteLine("");*/
             peak.TimestampStart > (trialStartTimestamp - settings.MaxTrialStartToGazePeakStartInterval) &&
             peak.TimestampStart < trialEndTimestamp &&
             peak.TimestampEnd < trialEndTimestamp + settings.MaxGazePeakEndToNextTrialStartInterval &&
-            (handPeak == null || peak.TimestampStart < (handPeak.TimestampStart + settings.MaxGazePeakStartToHandPeakStartInterval)) && 
+            (handPeak == null || peak.TimestampStart < (handPeak.TimestampStart + settings.MaxGazePeakStartToHandPeakStartInterval)) &&
             peak.TimestampStart < (trialResponseTimestamp - settings.MinResponseToGazePeakStartInterval)
             );
 
